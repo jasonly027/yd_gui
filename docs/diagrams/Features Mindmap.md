@@ -1,0 +1,43 @@
+# yd-gui Features
+- From YouTube URL
+    - regular links
+    - playlist links
+    - auto read from clipboard
+
+- Download Manager
+    - Wrap yt-dlp
+        - check CLI exists
+        - get json(s)
+        - convert to video obj(s)
+        - when downloading, get progress from CLI
+    - History
+        - Sqlite DB
+            - for each video:
+                - things in video pane
+                - mark invalid when download source broken
+                - datetime of insert
+        - pagination
+        - clear 
+            - download history
+            - temp json dir
+    - GUI
+        - download all btn
+        - Each video pane show:
+            - title
+            - thumbnail
+            - duration
+            - author
+            - DL Options
+                - quality + fps dropdown
+                - audio checkbox
+                - format dropdown
+            - download btn
+            - progress
+            - delete from history
+        - open output folder
+        - paginate by scrolling down or next/prev page btn
+    - Settings
+        - default video quality to dl dropdown (best/worst)
+        - default dl audio dropdown (yes/no)
+        - auto paste url from clipboard checkbox
+        - clear ... from History
