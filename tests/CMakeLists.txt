@@ -1,19 +1,20 @@
-# Setup GTest
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.14.0
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-
-add_executable(test_test
-    test.test.cpp
-)
-target_link_libraries(test_test PRIVATE GTest::gtest_main)
-
-
 include(GoogleTest)
-gtest_discover_tests(test_test)
+
+add_executable("${PROJECT_NAME}_tests"
+    downloader.test.cpp
+)
+target_link_libraries("${PROJECT_NAME}_tests"
+    PRIVATE
+    GTest::gtest_main
+    Qt6::Quick
+    Qt6::Test
+    nlohmann_json::nlohmann_json
+    "${PROJECT_NAME}_lib"
+)
+
+gtest_discover_tests("${PROJECT_NAME}_tests")
+
+target_compile_definitions("${PROJECT_NAME}_tests"
+    PRIVATE
+    YD_GUI_TEST_DATA_PATH="${PROJECT_SOURCE_DIR}/tests/data/"
+)

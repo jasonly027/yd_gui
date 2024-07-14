@@ -9,30 +9,30 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Setup QT
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 
-find_package(Qt6 6.7 REQUIRED COMPONENTS Quick)
-qt_standard_project_setup(REQUIRES 6.5)
+# Setup Dependencies
+include(SetupDependencies)
 
 # Create executable
-
-qt_add_executable(yd_gui src/main.cpp)
-
-qt_add_qml_module(yd_gui
-    URI yd_gui
+qt_add_executable(${PROJECT_NAME} src/main.cpp)
+qt_add_qml_module(${PROJECT_NAME}
+    URI ${PROJECT_NAME}
     QML_FILES
-    qml/Main.qml
+    src/Main.qml
 )
 
-target_link_libraries(yd_gui PRIVATE Qt6::Quick)
-
-add_subdirectory(qml/yd_gui)
+# Add sources
+add_subdirectory(src)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt6::Quick
+    ${PROJECT_NAME}_libplugin
+)
 
 if(APPLE)
-    set_target_properties(yd_gui PROPERTIES MACOSX_BUNDLE TRUE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES MACOSX_BUNDLE TRUE)
 endif()
 
 # Testing
-
 enable_testing()
 add_subdirectory(tests)

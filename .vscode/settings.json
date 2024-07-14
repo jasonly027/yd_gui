@@ -1,0 +1,7 @@
+{
+    "cmake.configureSettings": {
+        "CMAKE_PREFIX_PATH": "C:\\Qt\\6.7.2\\msvc2019_64",
+        "SQLite3_INCLUDE_DIR": "C:\\Users\\yoish\\git\\cpp\\sdks\\sqlite-amalgamation-3460000",
+        "SQLite3_LIBRARY": "C:\\Users\\yoish\\git\\cpp\\sdks\\sqlite-amalgamation-3460000",
+    }
+}

@@ -1,8 +1,10 @@
-#include <QGuiApplication>
-#include <QQmlApplicationEngine>
+#include <qqmlapplicationengine.h>
 #include <qqmlextensionplugin.h>
 
-int main(int argc, char *argv[]) {
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+
+int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
 
     QQmlApplicationEngine engine;
@@ -11,5 +13,5 @@ int main(int argc, char *argv[]) {
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.loadFromModule("yd_gui", "Main");
 
-    return app.exec();
+    return QGuiApplication::exec();
 }

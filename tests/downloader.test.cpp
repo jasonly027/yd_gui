@@ -1,0 +1,165 @@
+#include <downloader.h>
+#include <gtest/gtest.h>
+#include <qcoreapplication.h>
+#include <qdebug.h>
+#include <qdir.h>
+#include <qobject.h>
+#include <qprocess.h>
+#include <qsignalspy.h>
+
+#include <QCoreApplication>
+#include <QDebug>
+#include <QSignalSpy>
+#include <exception>
+#include <nlohmann/json.hpp>
+#include <optional>
+
+#include "video.h"
+
+using std::optional, yd_gui::Downloader, yd_gui::VideoInfo, yd_gui::VideoFormat;
+
+class ParseRawInfoTest : public testing::Test {
+   protected:
+    ParseRawInfoTest()
+        : jm_info_("Sv3LXGWKw6Q",
+                   "Should this be the future of Angular applications?",
+                   "Joshua Morony", 341,
+                   "https://i.ytimg.com/vi/Sv3LXGWKw6Q/maxresdefault.jpg",
+                   // The first three VideoFormats and the last one
+                   {VideoFormat("602", "mp4", 256, 144, 15),
+                    VideoFormat("394", "mp4", 256, 144, 30),
+                    VideoFormat("278", "webm", 256, 144, 30),
+                    VideoFormat("625", "mp4", 3840, 2160, 30)},
+                   true),
+          cks_info_(
+              "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
+              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
+              "652eccdcf4d64600015fd610/custom_thumbnail/1080.jpg?1701815955",
+              {VideoFormat("hls-360", "mp4", 426, 240, 0),
+               VideoFormat("hls-1126", "mp4", 854, 480, 0),
+               VideoFormat("hls-2928", "mp4", 1280, 720, 0),
+               VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
+              true) {}
+
+    // ~DownloaderTest() override { delete downloader_; }
+
+    // Downloader* downloader_;
+    VideoInfo jm_info_;
+    VideoInfo cks_info_;
+};
+
+QString read_file(const QString& path) {
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        throw std::exception();
+    }
+
+    QTextStream in(&file);
+    return in.readAll();
+}
+
+bool infos_equal_no_check_formats(const VideoInfo& lhs, const VideoInfo& rhs) {
+    return lhs.video_id() == rhs.video_id() && lhs.title() == rhs.title() &&
+           lhs.author() == rhs.author() && lhs.seconds() == rhs.seconds() &&
+           lhs.thumbnail() == rhs.thumbnail() &&
+           lhs.audio_available() == rhs.audio_available();
+}
+
+TEST_F(ParseRawInfoTest, Fmt1) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "jm_fmt.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_TRUE(infos_equal_no_check_formats(info.value(), jm_info_));
+    EXPECT_EQ(info->formats().at(0), jm_info_.formats().at(0));
+    EXPECT_EQ(info->formats().at(1), jm_info_.formats().at(1));
+    EXPECT_EQ(info->formats().at(2), jm_info_.formats().at(2));
+    EXPECT_EQ(info->formats().last(), jm_info_.formats().last());
+}
+
+TEST_F(ParseRawInfoTest, UnFmt) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "jm_unfmt.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_TRUE(infos_equal_no_check_formats(info.value(), jm_info_));
+    EXPECT_EQ(info->formats().at(0), jm_info_.formats().at(0));
+    EXPECT_EQ(info->formats().at(1), jm_info_.formats().at(1));
+    EXPECT_EQ(info->formats().at(2), jm_info_.formats().at(2));
+    EXPECT_EQ(info->formats().last(), jm_info_.formats().last());
+}
+
+TEST_F(ParseRawInfoTest, Malformed) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "jm_unfmt_malformed.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    EXPECT_FALSE(info.has_value());
+}
+
+TEST_F(ParseRawInfoTest, Fmt2) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "cks_fmt.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_EQ(info.value(), cks_info_);
+}
+
+TEST_F(ParseRawInfoTest, MissingId) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "cks_fmt_missing_id.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_NE(info.value(), cks_info_);
+    EXPECT_EQ(info->video_id(), "");
+    EXPECT_EQ(info->title(), cks_info_.title());
+}
+
+TEST_F(ParseRawInfoTest, MissingIdAndTitle) {
+    QString raw =
+        read_file(YD_GUI_TEST_DATA_PATH "cks_fmt_missing_id,title.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_NE(info.value(), cks_info_);
+    EXPECT_EQ(info->video_id(), "");
+    EXPECT_EQ(info->title(), "");
+    EXPECT_EQ(info->formats(), cks_info_.formats());
+}
+
+TEST_F(ParseRawInfoTest, JustFormats) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "cks_just_formats.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_EQ(info->video_id(), "");
+    EXPECT_EQ(info->title(), "");
+    EXPECT_EQ(info->author(), "");
+    EXPECT_EQ(info->seconds(), 0);
+    EXPECT_EQ(info->thumbnail(), "");
+    EXPECT_EQ(info->audio_available(), true);
+    EXPECT_EQ(info->formats(), cks_info_.formats());
+}
+
+TEST_F(ParseRawInfoTest, MissingFormats) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "cks_missing_formats.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_FALSE(info.has_value());
+}
+
+TEST_F(ParseRawInfoTest, JustACodecs) {
+    QString raw = read_file(YD_GUI_TEST_DATA_PATH "cks_just_acodecs.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_TRUE(info.has_value());
+    EXPECT_TRUE(info->audio_available());
+    EXPECT_TRUE(info->formats().empty());
+}
+
+TEST_F(ParseRawInfoTest, JustFormatsEmpty) {
+    QString raw =
+        read_file(YD_GUI_TEST_DATA_PATH "cks_just_formats_empty.json");
+    std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
+
+    ASSERT_FALSE(info.has_value());
+}
