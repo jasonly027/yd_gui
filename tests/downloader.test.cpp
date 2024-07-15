@@ -6,6 +6,7 @@
 #include <qobject.h>
 #include <qprocess.h>
 #include <qsignalspy.h>
+#include <qtimer.h>
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -16,7 +17,8 @@
 
 #include "video.h"
 
-using std::optional, yd_gui::Downloader, yd_gui::VideoInfo, yd_gui::VideoFormat;
+using std::optional, yd_gui::Downloader, yd_gui::VideoInfo, yd_gui::VideoFormat,
+    yd_gui::ManagedVideo;
 
 class ParseRawInfoTest : public testing::Test {
    protected:
@@ -25,6 +27,7 @@ class ParseRawInfoTest : public testing::Test {
                    "Should this be the future of Angular applications?",
                    "Joshua Morony", 341,
                    "https://i.ytimg.com/vi/Sv3LXGWKw6Q/maxresdefault.jpg",
+                   "https://youtu.be/Sv3LXGWKw6Q",
                    // The first three VideoFormats and the last one
                    {VideoFormat("602", "mp4", 256, 144, 15),
                     VideoFormat("394", "mp4", 256, 144, 30),
@@ -35,15 +38,14 @@ class ParseRawInfoTest : public testing::Test {
               "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
               "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
               "652eccdcf4d64600015fd610/custom_thumbnail/1080.jpg?1701815955",
+              "https://www.americastestkitchen.com/cookscountry/episode/"
+              "918-sausages-and-salad",
               {VideoFormat("hls-360", "mp4", 426, 240, 0),
                VideoFormat("hls-1126", "mp4", 854, 480, 0),
                VideoFormat("hls-2928", "mp4", 1280, 720, 0),
                VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
               true) {}
 
-    // ~DownloaderTest() override { delete downloader_; }
-
-    // Downloader* downloader_;
     VideoInfo jm_info_;
     VideoInfo cks_info_;
 };
@@ -162,4 +164,38 @@ TEST_F(ParseRawInfoTest, JustFormatsEmpty) {
     std::optional<yd_gui::VideoInfo> info = Downloader::parseRawInfo(raw);
 
     ASSERT_FALSE(info.has_value());
+}
+
+class DownloaderTest : public testing::Test {
+   protected:
+    DownloaderTest()
+        : downloader_(new Downloader()),
+          jm_info_("Sv3LXGWKw6Q",
+                   "Should this be the future of Angular applications?",
+                   "Joshua Morony", 341,
+                   "https://i.ytimg.com/vi/Sv3LXGWKw6Q/maxresdefault.jpg",
+                   "https://youtu.be/Sv3LXGWKw6Q",
+                   // The first three VideoFormats and the last one
+                   {VideoFormat("602", "mp4", 256, 144, 15),
+                    VideoFormat("394", "mp4", 256, 144, 30),
+                    VideoFormat("278", "webm", 256, 144, 30),
+                    VideoFormat("625", "mp4", 3840, 2160, 30)},
+                   true) {}
+    ~DownloaderTest() override { delete downloader_; }
+
+    Downloader* downloader_;
+    VideoInfo jm_info_;
+};
+
+TEST_F(DownloaderTest, IsDownloadingSignals) {
+    QSignalSpy is_downloading_spy(downloader_,
+                                  &Downloader::isDownloadingChanged);
+
+    ManagedVideo v1(0, jm_info_, 0);
+    ManagedVideo v2(0, jm_info_, 0);
+
+    downloader_->enqueue_video(&v1);
+    downloader_->enqueue_video(&v2);
+
+    EXPECT_EQ(is_downloading_spy.count(), 1);
 }
