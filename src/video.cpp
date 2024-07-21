@@ -44,23 +44,22 @@ const QString& VideoInfo::url() const { return url_; }
 const QList<VideoFormat>& VideoInfo::formats() const { return formats_; }
 const bool& VideoInfo::audio_available() const { return audio_available_; }
 
-ManagedVideo::ManagedVideo(uint64_t id, VideoInfo info, uint64_t created_at,
+ManagedVideo::ManagedVideo(int64_t id, VideoInfo info, int64_t created_at,
                            QObject* parent)
     : id_(id),
       info_(std::move(info)),
       created_at_(created_at),
-      progress_(0.0),
-      selected_audio_(false),
       QObject(parent) {
     if (!info_.formats().empty()) {
         selected_format_ = info_.formats().last().format_id();
     }
-    selected_audio_ = info_.audio_available();
 }
 
-void ManagedVideo::setProgress(float progress) {
+ManagedVideo::~ManagedVideo() { emit this->requestCancelDownload(); }
+
+void ManagedVideo::setProgress(QString progress) {
     if (progress == progress_) return;
-    progress_ = progress;
+    progress_ = std::move(progress);
     emit progressChanged();
 }
 
@@ -70,24 +69,16 @@ void ManagedVideo::setSelectedFormat(QString selected_format) {
     emit selectedFormatChanged();
 }
 
-void ManagedVideo::setSelectedAudio(bool selected_audio) {
-    if (selected_audio == selected_audio_) return;
-    selected_audio_ = selected_audio;
-    emit selectedAudioChanged();
-}
-
-uint64_t ManagedVideo::id() const { return id_; }
+int64_t ManagedVideo::id() const { return id_; }
 
 const VideoInfo& ManagedVideo::info() const { return info_; }
 
-uint64_t ManagedVideo::created_at() const { return created_at_; }
+int64_t ManagedVideo::created_at() const { return created_at_; }
 
-float ManagedVideo::progress() const { return progress_; }
+QString ManagedVideo::progress() const { return progress_; }
 
 const QString& ManagedVideo::selected_format() const {
     return selected_format_;
 }
-
-bool ManagedVideo::selected_audio() const { return selected_audio_; }
 
 }  // namespace yd_gui

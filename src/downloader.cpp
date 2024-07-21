@@ -5,6 +5,7 @@
 #include <qpointer.h>
 #include <qprocess.h>
 #include <qqmlintegration.h>
+#include <qregularexpression.h>
 #include <qstandardpaths.h>
 #include <qtmetamacros.h>
 
@@ -14,15 +15,31 @@
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <string>
 #include <utility>
 
 #include "video.h"
 
 namespace yd_gui {
-using json = nlohmann::json;
+
+using nlohmann::basic_json;
+using nlohmann::json;
 using std::nullopt;
+using std::string;
+
+Downloader::Downloader(QObject* parent) : QObject(parent) {}
 
 static constexpr auto kProgram = "yt-dlp";
+
+template <typename T>
+static T from_field(const char field[], const json& json,
+                    bool (json::basic_json::*condition)() const) {
+    const auto it = json.find(field);
+    if (it != json.cend() && ((*it).*condition)()) {
+        return it->get<T>();
+    }
+    return T{};
+}
 
 // Deserialize from JSON to VideoInfo
 optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
@@ -30,33 +47,24 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
     // Check if invalid JSON
     if (info.is_discarded()) return nullopt;
 
-    const auto get_string = [](const json& json,
-                               const char field[]) -> QString {
-        if (const auto it = json.find(field);
-            it != json.cend() && it->is_string())
-            return QString::fromStdString(it->get<string>());
-        return "";
-    };
-    const auto get_uin32_t = [](const json& json,
-                                const char field[]) -> uint32_t {
-        if (const auto it = json.find(field);
-            it != json.cend() && it->is_number_unsigned())
-            return json[field].get<uint32_t>();
-        return 0;
-    };
-    const auto get_float = [](const json& json, const char field[]) -> float {
-        if (const auto it = json.find(field);
-            it != json.cend() && it->is_number())
-            return json[field].get<float>();
-        return 0.0;
-    };
+    auto video_id = QString::fromStdString(
+        from_field<string>("id", info, &basic_json<>::is_string));
 
-    QString video_id = get_string(info, "id");
-    QString title = get_string(info, "title");
-    QString author = get_string(info, "channel");
-    uint32_t seconds = get_uin32_t(info, "duration");
-    QString thumbnail = get_string(info, "thumbnail");
-    QString url = get_string(info, "original_url");
+    auto title = QString::fromStdString(
+        from_field<string>("title", info, &basic_json<>::is_string));
+
+    auto author = QString::fromStdString(
+        from_field<string>("channel", info, &basic_json<>::is_string));
+
+    auto seconds = from_field<uint32_t>(
+        "duration", info, &nlohmann::basic_json<>::is_number_unsigned);
+
+    auto thumbnail = QString::fromStdString(
+        from_field<string>("thumbnail", info, &basic_json<>::is_string));
+
+    auto url = QString::fromStdString(
+        from_field<string>("original_url", info, &basic_json<>::is_string));
+
     bool audio_available = false;
     QList<VideoFormat> formats;
 
@@ -71,7 +79,9 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
                 audio_available = true;
             }
 
-            QString format_id = get_string(format_it, "format_id");
+            auto format_id = QString::fromStdString(from_field<string>(
+                "format_id", format_it, &basic_json<>::is_string));
+
             auto vcodec = format_it.find("vcodec");
             // We will skip this format on any of these conditions:
             // 1) format_id is missing (No point in using it if we can't target
@@ -81,10 +91,19 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
                 continue;
             }
 
-            QString container = get_string(format_it, "ext");
-            uint32_t width = get_uin32_t(format_it, "width");
-            uint32_t height = get_uin32_t(format_it, "height");
-            float fps = get_float(format_it, "fps");
+            auto container = QString::fromStdString(
+                from_field<string>("ext", format_it, &basic_json<>::is_string));
+
+            auto width = from_field<uint32_t>(
+                "width", format_it,
+                &nlohmann::basic_json<>::is_number_unsigned);
+
+            auto height = from_field<uint32_t>(
+                "height", format_it,
+                &nlohmann::basic_json<>::is_number_unsigned);
+
+            auto fps = from_field<uint32_t>("fps", format_it,
+                                            &nlohmann::basic_json<>::is_number);
 
             formats << VideoFormat(std::move(format_id), std::move(container),
                                    width, height, fps);
@@ -133,26 +152,47 @@ void Downloader::enqueue_video(ManagedVideo* const video) {
     }
 }
 
+void Downloader::test_enqueue() {
+    VideoInfo info = VideoInfo(
+        "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
+        "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
+        "652eccdcf4d64600015fd610/custom_thumbnail/1080.jpg?1701815955",
+        "https://www.americastestkitchen.com/cookscountry/episode/"
+        "918-sausages-and-salad",
+        {VideoFormat("hls-360", "mp4", 426, 240, 0),
+         VideoFormat("hls-1126", "mp4", 854, 480, 0),
+         VideoFormat("hls-2928", "mp4", 1280, 720, 0),
+         VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
+        true);
+    auto* video = new ManagedVideo(0, info, 0, this);
+    video->setSelectedFormat("hls-1126");
+
+    enqueue_video(video);
+}
+
 QProcess* Downloader::create_fetch_process(const QString& url) {
     QProcess* yt_dlp = create_generic_process();
-    yt_dlp->setArguments({"--dump-json", "\"" % url % "\""});
+    yt_dlp->setArguments({"--dump-json", url});
     return yt_dlp;
 }
 
 QProcess* Downloader::create_download_process(const QString& format_id,
                                               const QString& url) {
     QProcess* yt_dlp = create_generic_process();
-    QString format_arg = "\"ba\"";
+    QString format_arg = "ba";
     if (format_id != "") {
-        format_arg = "\"" % format_id % "+ba\"";
+        format_arg = format_id % "+" % format_arg;
     }
-    yt_dlp->setArguments({"-f", std::move(format_arg), "\"" % url % "\""});
+    yt_dlp->setArguments({"--quiet", "--progress", "--progress-template",
+                          "%(progress._percent_str)s", "--newline", "-f",
+                          std::move(format_arg), url});
 
     return yt_dlp;
 }
 
 // Create new yt-dlp process. The QProcess will be deleted when its
-// finish signal is emit. Sets the write location to the download directory
+// finish signal is emit. Sets the write location to the download directory.
+// Standard error is forwarded to standardErrorPushed signal.
 QProcess* Downloader::create_generic_process() {
     auto* yt_dlp = new QProcess();
     yt_dlp->setProgram(kProgram);
@@ -178,6 +218,18 @@ void Downloader::start_download() {
         create_download_process(video->selected_format(), video->info().url());
     QObject::connect(video, &ManagedVideo::requestCancelDownload, yt_dlp,
                      &QProcess::kill);
+    QObject::connect(
+        yt_dlp, &QProcess::readyReadStandardOutput, [yt_dlp, video, this] {
+            const QString data = yt_dlp->readAllStandardOutput();
+
+            const QRegularExpression re(
+                R"#(^( (?<percent>100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?%)\n)+$)#");
+            const auto match = re.match(data);
+
+            if (match.hasMatch()) {
+                video->setProgress(match.captured("percent"));
+            }
+        });
     QObject::connect(yt_dlp, &QProcess::finished, this, [this] {
         set_is_downloading(false);
         this->start_download();

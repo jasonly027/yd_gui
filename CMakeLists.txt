@@ -5,6 +5,8 @@ project(yd_gui
     LANGUAGES CXX
 )
 
+option(ENABLE_TESTING "" ON)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -34,5 +36,7 @@ if(APPLE)
 endif()
 
 # Testing
-enable_testing()
-add_subdirectory(tests)
+if(ENABLE_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

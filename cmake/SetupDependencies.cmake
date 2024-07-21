@@ -23,5 +23,6 @@ CPMAddPackage(
     GITHUB_REPOSITORY fnc12/sqlite_orm
     VERSION 1.8.2
 )
-find_package(Qt6 6.7 REQUIRED COMPONENTS Quick Test)
+find_package(Qt6 6.7 REQUIRED COMPONENTS Quick Sql Test QuickTest)
+add_compile_definitions(QUICK_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}/tests/qml")
 qt_standard_project_setup(REQUIRES 6.5)

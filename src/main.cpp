@@ -1,6 +1,3 @@
-#include <qqmlapplicationengine.h>
-#include <qqmlextensionplugin.h>
-
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 

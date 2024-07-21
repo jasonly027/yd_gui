@@ -29,7 +29,7 @@ class Downloader : public QObject {
         bool programExists READ program_exists NOTIFY programExistsChanged);
 
    public:
-    explicit Downloader() = default;
+    explicit Downloader(QObject* parent = nullptr);
 
     static optional<VideoInfo> parseRawInfo(const QString& raw_info);
 
@@ -37,17 +37,28 @@ class Downloader : public QObject {
 
     Q_INVOKABLE void enqueue_video(ManagedVideo* video);
 
+    Q_INVOKABLE void test_enqueue();
+
    signals:
     void isFetchingChanged();
+
     void isDownloadingChanged();
+
     void programExistsChanged();
+
     void standardErrorPushed(QString data);
+
+    void standardOutputPushed(QString data);
+
     void infoPushed(VideoInfo info);
+
     void fetchInfoBadParse();
 
    public:
     bool is_fetching() const;
+
     bool is_downloading() const;
+
     bool program_exists() const;
 
    private:
