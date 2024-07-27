@@ -4,6 +4,7 @@
 #include <qobject.h>
 
 #include <QDebug>
+#include <algorithm>
 #include <utility>
 
 namespace yd_gui {
@@ -21,6 +22,16 @@ const QString& VideoFormat::container() const { return container_; }
 uint32_t VideoFormat::width() const { return width_; }
 uint32_t VideoFormat::height() const { return height_; }
 float VideoFormat::fps() const { return fps_; }
+
+std::ostream& operator<<(std::ostream& os, const VideoFormat& format) {
+    os << "VideoFormat{"
+       << " format_id: " << format.format_id().toStdString()
+       << ", container: " << format.container().toStdString()
+       << ", width: " << format.width()
+       << ", height: " << format.height()
+       << ", fps: " << format.fps() << " }";
+    return os;
+}
 
 VideoInfo::VideoInfo(QString video_id, QString title, QString author,
                      uint32_t seconds, QString thumbnail, QString url,
@@ -43,6 +54,25 @@ const QString& VideoInfo::thumbnail() const { return thumbnail_; }
 const QString& VideoInfo::url() const { return url_; }
 const QList<VideoFormat>& VideoInfo::formats() const { return formats_; }
 const bool& VideoInfo::audio_available() const { return audio_available_; }
+
+std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
+    const auto& formats = info.formats();
+
+    os << "VideoInfo{"
+       << " video_id: " << info.video_id().toStdString()
+       << ", title: " << info.title().toStdString()
+       << ", author: " << info.author().toStdString()
+       << ", seconds: " << info.seconds()
+       << ", thumbnail: " << info.thumbnail().toStdString()
+       << ", url: " << info.url().toStdString() << ", formats: [ ";
+
+    for (const auto& format : formats) {
+        os << format << ' ';
+    }
+
+    os << "], audio_available: " << info.audio_available() << " }";
+    return os;
+}
 
 ManagedVideo::ManagedVideo(int64_t id, VideoInfo info, int64_t created_at,
                            QObject* parent)

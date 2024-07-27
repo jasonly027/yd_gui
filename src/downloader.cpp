@@ -2,6 +2,7 @@
 
 #include <qcontainerfwd.h>
 #include <qobject.h>
+#include <qoverload.h>
 #include <qpointer.h>
 #include <qprocess.h>
 #include <qqmlintegration.h>
@@ -129,17 +130,16 @@ void Downloader::fetch_info(const QString& url) {
     QProcess* yt_dlp = create_fetch_process(url);
 
     QObject::connect(yt_dlp, &QProcess::finished, this, [=, this] {
-        this->set_is_fetching(false);
-
         const QString raw_info = yt_dlp->readAllStandardOutput();
         optional<VideoInfo> info = parseRawInfo(raw_info);
 
         if (!info.has_value()) {
             emit this->fetchInfoBadParse();
-            return;
+        } else {
+            emit this->infoPushed(std::move(info.value()));
         }
 
-        emit this->infoPushed(std::move(info.value()));
+        this->set_is_fetching(false);
     });
 
     yt_dlp->start();
@@ -230,10 +230,15 @@ void Downloader::start_download() {
                 video->setProgress(match.captured("percent"));
             }
         });
-    QObject::connect(yt_dlp, &QProcess::finished, this, [this] {
-        set_is_downloading(false);
-        this->start_download();
-    });
+    QObject::connect(
+        yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        this, [video, this](int exit_code, QProcess::ExitStatus exit_status) {
+            if (exit_status == QProcess::ExitStatus::NormalExit && exit_code == 0) {
+                video->setProgress("100%");
+            }
+            set_is_downloading(false);
+            this->start_download();
+        });
 
     yt_dlp->start();
 }

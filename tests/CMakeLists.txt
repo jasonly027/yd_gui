@@ -3,12 +3,13 @@ include(GoogleTest)
 # Using GTest
 
 add_executable("${PROJECT_NAME}_tests"
+    tst_main.cpp
     tst_downloader.cpp
     tst_database.cpp
 )
 target_link_libraries("${PROJECT_NAME}_tests"
     PRIVATE
-    GTest::gtest_main
+    GTest::gtest
     Qt6::Quick
     Qt6::Sql
     Qt6::Test

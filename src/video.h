@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QString>
 #include <cstdint>
+#include <ostream>
 #include <string>
 
 namespace yd_gui {
@@ -46,6 +47,8 @@ class VideoFormat {
     uint32_t height_ = 0;  // height
     float fps_ = 0.0;      // fps
 };
+
+std::ostream& operator<<(std::ostream& os, const VideoFormat& format);
 
 class VideoInfo {
     Q_GADGET
@@ -89,6 +92,8 @@ class VideoInfo {
     QList<VideoFormat> formats_;    // list of formats
     bool audio_available_ = false;  // audio available
 };
+
+std::ostream& operator<<(std::ostream& os, const VideoInfo& info);
 
 class ManagedVideo : public QObject {
     Q_OBJECT
