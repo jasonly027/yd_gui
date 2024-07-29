@@ -108,10 +108,9 @@ class DatabaseTest : public testing::Test {
         QList<VideoFormat> formats;
         while (query.next()) {
             bool ok = false;
-            // unused
-            const int64_t id = query.value(0).toLongLong(&ok);
-            EXPECT_TRUE(ok);
 
+            // unused
+            // const int64_t id = query.value(0).toLongLong(&ok);
             QString format_id = query.value(1).toString();
             QString container = query.value(2).toString();
             const uint32_t width = query.value(3).toUInt(&ok);

@@ -11,6 +11,12 @@ qt_add_qml_module("${PROJECT_NAME}_lib"
 target_include_directories("${PROJECT_NAME}_lib" PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries("${PROJECT_NAME}_lib" PRIVATE nlohmann_json::nlohmann_json Qt6::Sql)
 
+if(MSVC)
+    target_compile_options("${PROJECT_NAME}_lib" PRIVATE /W4)
+else()
+    target_compile_options("${PROJECT_NAME}_lib" PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     message("Building in Release mode: Removing Qt Debug comments...")
     target_compile_definitions("${PROJECT_NAME}_lib" PRIVATE

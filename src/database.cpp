@@ -151,9 +151,9 @@ void Database::removeAllVideos() {
 
 Database::Database(const QString& file_name, QString connection_name,
                    QObject* parent)
-    : valid_(false),
-      connection_name_(std::move(connection_name)),
-      QObject(parent) {
+    : QObject(parent),
+      valid_(false),
+      connection_name_(std::move(connection_name)) {
     valid_ = create_database(file_name, connection_name_);
     if (!valid_) return;
 
