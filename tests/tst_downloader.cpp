@@ -23,6 +23,14 @@ namespace yd_gui {
 
 class VideoFixture : public testing::Test {
    protected:
+    static bool infos_equal_no_check_formats(const VideoInfo& lhs,
+                                             const VideoInfo& rhs) {
+        return lhs.video_id() == rhs.video_id() && lhs.title() == rhs.title() &&
+               lhs.author() == rhs.author() && lhs.seconds() == rhs.seconds() &&
+               lhs.thumbnail() == rhs.thumbnail() &&
+               lhs.audio_available() == rhs.audio_available();
+    }
+
     ManagedVideo cks_video_{
         0,
         VideoInfo(
@@ -72,24 +80,18 @@ class VideoFixture : public testing::Test {
     const VideoInfo& zoo_info_ = zoo_video_.info();
 };
 
-class ParseRawInfoTest : public VideoFixture {};
+class ParseRawInfoTest : public VideoFixture {
+   protected:
+    static QString read_file(const QString& path) {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            throw std::exception();
+        }
 
-QString read_file(const QString& path) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        throw std::exception();
+        QTextStream in(&file);
+        return in.readAll();
     }
-
-    QTextStream in(&file);
-    return in.readAll();
-}
-
-bool infos_equal_no_check_formats(const VideoInfo& lhs, const VideoInfo& rhs) {
-    return lhs.video_id() == rhs.video_id() && lhs.title() == rhs.title() &&
-           lhs.author() == rhs.author() && lhs.seconds() == rhs.seconds() &&
-           lhs.thumbnail() == rhs.thumbnail() &&
-           lhs.audio_available() == rhs.audio_available();
-}
+};
 
 TEST_F(ParseRawInfoTest, Fmt1) {
     QString raw = read_file(YD_GUI_TEST_DATA_PATH "jm_fmt.json");
@@ -256,7 +258,7 @@ TEST_F(DownloaderTest, FetchInfoJm) {
 TEST_F(DownloaderTest, EnqueueOneVideo) {
     dl_.enqueue_video(&zoo_video_);
 
-    while(downloading_spy_.wait(10000) && downloading_spy_.count() < 2);
+    while (downloading_spy_.wait(10000) && downloading_spy_.count() < 2);
 
     EXPECT_EQ(program_exists_spy_.count(), 0);
     EXPECT_EQ(downloading_spy_.count(), 2);
@@ -267,7 +269,7 @@ TEST_F(DownloaderTest, EnqueueTwoVideos) {
     dl_.enqueue_video(&zoo_video_);
     dl_.enqueue_video(&zoo_video_);
 
-    while(downloading_spy_.wait(10000) && downloading_spy_.count() < 4);
+    while (downloading_spy_.wait(10000) && downloading_spy_.count() < 4);
 
     EXPECT_EQ(program_exists_spy_.count(), 0);
     EXPECT_EQ(downloading_spy_.count(), 4);

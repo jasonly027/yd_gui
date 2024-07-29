@@ -25,8 +25,10 @@ Database& Database::get() {
 }
 
 Database Database::get_temp(const QString& connection_name) {
-    return Database(":memory", connection_name);
+    return Database(":memory:", connection_name);
 }
+
+bool Database::valid() const { return valid_; }
 
 static constexpr int64_t kChunkSize = 25;
 
@@ -35,7 +37,7 @@ QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_first_chunk() {
     QSqlQuery videos_query = create_select_first_chunk_videos(db, kChunkSize);
     videos_query.setForwardOnly(true);
 
-    if (videos_query.exec()) {
+    if (!videos_query.exec()) {
         log_error("Failed to fetch chunk of history");
         return {};
     }
@@ -60,7 +62,7 @@ QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_chunk(
         create_select_chunk_videos(db, last_id, last_created_at, kChunkSize);
     videos_query.setForwardOnly(true);
 
-    if (videos_query.exec()) {
+    if (!videos_query.exec()) {
         log_error("Failed to fetch chunk of history");
         return {};
     }
@@ -80,7 +82,7 @@ QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_chunk(
 void Database::setValid(const bool valid) {
     if (valid == valid_) return;
     valid_ = valid;
-    emit validChanged();
+    emit validChanged(valid_);
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -91,15 +93,19 @@ void Database::addVideo(const VideoInfo& info) {
     const int64_t created_at = QDateTime::currentSecsSinceEpoch();
 
     QSqlQuery insert_video = create_insert_video(db, info, created_at);
-    bool ok = insert_video.exec();
-    if (!ok) {
+    if (!insert_video.exec()) {
         log_error("Failed to add video (initial insert)");
         db.rollback();
         return;
     }
 
     QSqlQuery last_id_query(db);
-    const int64_t videos_id = last_id_query.lastInsertId().toLongLong(&ok);
+    int64_t videos_id{};
+    bool ok = false;
+    if (last_id_query.exec("SELECT last_insert_rowid();") &&
+        last_id_query.next()) {
+        videos_id = last_id_query.value(0).toLongLong(&ok);
+    }
     if (!ok) {
         log_error("Failed to add video (id retrieval)");
         db.rollback();
@@ -108,16 +114,14 @@ void Database::addVideo(const VideoInfo& info) {
 
     for (const auto& format : info.formats()) {
         QSqlQuery insert_format = create_insert_format(db, format, videos_id);
-        ok = insert_format.exec();
-        if (!ok) {
+        if (!insert_format.exec()) {
             log_error("Failed to add video (format insert)");
             db.rollback();
             return;
         }
     }
 
-    ok = db.commit();
-    if (!ok) {
+    if (!db.commit()) {
         log_error("Failed to add video (commit)");
         db.rollback();
         return;
@@ -135,15 +139,14 @@ void Database::removeVideo(const int64_t id) {
         "WHERE id = :id;");
     remove_video_query.bindValue(":id", id);
 
-    bool ok = remove_video_query.exec();
-    if (!ok) log_error("Failed to remove video");
+    if (!remove_video_query.exec()) log_error("Failed to remove video");
 }
 
 void Database::removeAllVideos() {
     const QSqlDatabase db = QSqlDatabase::database(connection_name_);
     QSqlQuery remove_all_query(db);
-    bool ok = remove_all_query.exec("DELETE FROM videos");
-    if (!ok) log_error("Failed to clear");
+    if (!remove_all_query.exec("DELETE FROM videos"))
+        log_error("Failed to clear");
 }
 
 Database::Database(const QString& file_name, QString connection_name,
@@ -159,7 +162,7 @@ Database::Database(const QString& file_name, QString connection_name,
 }
 
 void Database::log_error(QString message) {
-    emit errorPushed("[HISTORY] " % std::move(message));
+    emit errorPushed("[History] " % std::move(message));
 }
 
 bool Database::create_database(const QString& file_name,
@@ -224,8 +227,8 @@ bool Database::create_formats_table(QSqlDatabase& db) {
         "    id             INTEGER     PRIMARY KEY AUTOINCREMENT,"
         "    format_id      TEXT        NOT NULL,"
         "    container      TEXT        NOT NULL,"
-        "    width          TEXT        NOT NULL,"
-        "    height         TEXT        NOT NULL,"
+        "    width          INTEGER     NOT NULL,"
+        "    height         INTEGER     NOT NULL,"
         "    fps            REAL        NOT NULL,"
         "    videos_id      INTEGER     NOT NULL,"
         "    FOREIGN KEY (videos_id) REFERENCES videos (id) ON DELETE CASCADE"
@@ -424,19 +427,19 @@ QSqlQuery Database::create_insert_format(QSqlDatabase& db,
     insert_format.prepare(
         "INSERT INTO formats"
         "("
-        "    format_id, container, width, height, fps, video_id"
+        "    format_id, container, width, height, fps, videos_id"
         ")"
 
         "VALUES"
         "("
-        "    :format_id, :container, :width, :height, :fps, :video_id"
+        "    :format_id, :container, :width, :height, :fps, :videos_id"
         ");");
     insert_format.bindValue(":format_id", format.format_id());
     insert_format.bindValue(":container", format.container());
     insert_format.bindValue(":width", format.width());
     insert_format.bindValue(":height", format.height());
     insert_format.bindValue(":fps", format.fps());
-    insert_format.bindValue("video_id", videos_id);
+    insert_format.bindValue(":videos_id", videos_id);
 
     return insert_format;
 }

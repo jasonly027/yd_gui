@@ -23,13 +23,15 @@ class Database : public QObject {
 
     static Database get_temp(const QString& connection_name);
 
+    bool valid() const;
+
     QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> fetch_first_chunk();
 
     QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> fetch_chunk(
         int64_t last_id, int64_t last_created_at);
 
    signals:
-    void validChanged();
+    void validChanged(bool valid);
 
     void errorPushed(QString error);
 
