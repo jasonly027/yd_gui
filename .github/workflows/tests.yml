@@ -41,7 +41,7 @@ jobs:
 
             - name: Setup MSVC
               uses: ilammy/msvc-dev-cmd@v1
-              
+
             - name: Install Ninja
               uses: seanmiddleditch/gha-setup-ninja@master
 
@@ -50,6 +50,11 @@ jobs:
               with:
                   version: "6.7.2"
                   setup-python: false
+
+            - name: Install yt-dlp
+              uses: AnimMouse/setup-yt-dlp@v1
+              with:
+                with-ffmpeg: true
 
             - name: Set reusable strings
               id: strings

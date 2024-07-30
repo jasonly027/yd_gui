@@ -5,6 +5,7 @@
 #include <qobject.h>
 #include <qpair.h>
 #include <qsqlquery.h>
+#include <qtypes.h>
 
 #include <QDateTime>
 #include <QSqlError>
@@ -30,7 +31,7 @@ Database Database::get_temp(const QString& connection_name) {
 
 bool Database::valid() const { return valid_; }
 
-static constexpr int64_t kChunkSize = 25;
+static constexpr qint64 kChunkSize = 25;
 
 QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_first_chunk() {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
@@ -237,7 +238,7 @@ bool Database::create_formats_table(QSqlDatabase& db) {
 
 // Selected from newest to oldest
 QSqlQuery Database::create_select_first_chunk_videos(QSqlDatabase& db,
-                                                     int64_t chunk_size) {
+                                                     qint64 chunk_size) {
     QSqlQuery videos_query(db);
     videos_query.prepare(
         "SELECT id, created_at, video_id, title, author,"
