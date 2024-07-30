@@ -73,7 +73,7 @@ std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
     return os;
 }
 
-ManagedVideo::ManagedVideo(int64_t id, VideoInfo info, int64_t created_at,
+ManagedVideo::ManagedVideo(qint64 id, VideoInfo info, qint64 created_at,
                            QObject* parent)
     : QObject(parent),
       id_(id),
@@ -98,11 +98,11 @@ void ManagedVideo::setSelectedFormat(QString selected_format) {
     emit selectedFormatChanged();
 }
 
-int64_t ManagedVideo::id() const { return id_; }
+qint64 ManagedVideo::id() const { return id_; }
 
 const VideoInfo& ManagedVideo::info() const { return info_; }
 
-int64_t ManagedVideo::created_at() const { return created_at_; }
+qint64 ManagedVideo::created_at() const { return created_at_; }
 
 QString ManagedVideo::progress() const { return progress_; }
 

@@ -40,13 +40,13 @@ class DatabaseTest : public testing::Test {
         return QSqlQuery(QSqlDatabase::database(connection_name_));
     }
 
-    int64_t get_num_rows_in_videos() {
+    qint64 get_num_rows_in_videos() {
         QSqlQuery query = create_query();
         EXPECT_TRUE(query.exec("SELECT COUNT(*) FROM videos;"));
         query.next();
 
         bool ok = false;
-        int64_t rows = query.value(0).toLongLong(&ok);
+        qint64 rows = query.value(0).toLongLong(&ok);
         EXPECT_TRUE(ok);
         return rows;
     }
@@ -62,19 +62,19 @@ class DatabaseTest : public testing::Test {
     // Returns back the query after using it
     static void check_video_query(const QSqlRecord& record,
                                   const VideoInfo& expected_info,
-                                  const int64_t expected_id,
+                                  const qint64 expected_id,
                                   const uint32_t before_add,
                                   const uint32_t after_add) {
         bool ok = false;
 
-        const int64_t id = record.value(0).toLongLong(&ok);
+        const qint64 id = record.value(0).toLongLong(&ok);
         EXPECT_TRUE(ok);
-        const int64_t created_at = record.value(1).toLongLong(&ok);
+        const qint64 created_at = record.value(1).toLongLong(&ok);
         EXPECT_TRUE(ok);
         const QString video_id = record.value(2).toString();
         const QString title = record.value(3).toString();
         const QString author = record.value(4).toString();
-        const int64_t seconds = record.value(5).toUInt(&ok);
+        const qint64 seconds = record.value(5).toUInt(&ok);
         EXPECT_TRUE(ok);
         const QString thumbnail = record.value(6).toString();
         const QString url = record.value(7).toString();
@@ -95,7 +95,7 @@ class DatabaseTest : public testing::Test {
     }
 
     void check_formats_query(const QList<VideoFormat>& expected_formats,
-                             const int64_t expected_videos_id) {
+                             const qint64 expected_videos_id) {
         QSqlQuery query = create_query();
 
         query.prepare(QString("SELECT") % kFormatsColumns %
@@ -110,7 +110,7 @@ class DatabaseTest : public testing::Test {
             bool ok = false;
 
             // unused
-            // const int64_t id = query.value(0).toLongLong(&ok);
+            // const qint64 id = query.value(0).toLongLong(&ok);
             QString format_id = query.value(1).toString();
             QString container = query.value(2).toString();
             const uint32_t width = query.value(3).toUInt(&ok);
@@ -120,7 +120,7 @@ class DatabaseTest : public testing::Test {
             const float fps = query.value(5).toFloat(&ok);
             EXPECT_TRUE(ok);
 
-            const int64_t videos_id = query.value(6).toLongLong(&ok);
+            const qint64 videos_id = query.value(6).toLongLong(&ok);
             EXPECT_TRUE(ok);
             EXPECT_EQ(videos_id, expected_videos_id);
 
@@ -132,7 +132,7 @@ class DatabaseTest : public testing::Test {
     }
 
     void check_add(const QSqlRecord& record, const VideoInfo& expected_info,
-                   const int64_t expected_id, const uint32_t before_add,
+                   const qint64 expected_id, const uint32_t before_add,
                    const uint32_t after_add) {
         check_video_query(record, expected_info, expected_id, before_add,
                           after_add);
@@ -140,8 +140,8 @@ class DatabaseTest : public testing::Test {
     }
 
     static void check_video_pushed(
-        const QPair<QPair<int64_t, int64_t>, VideoInfo>& components,
-        const VideoInfo& expected_info, const int64_t expected_id,
+        const QPair<QPair<qint64, qint64>, VideoInfo>& components,
+        const VideoInfo& expected_info, const qint64 expected_id,
         const uint32_t before_add, const uint32_t after_add) {
         const auto& id = components.first.first;
         const auto& created_at = components.first.second;
@@ -221,7 +221,7 @@ TEST_F(DatabaseTest, AddOneVideo) {
 
     auto components = video_spy_.takeFirst()
                           .takeFirst()
-                          .value<QPair<QPair<int64_t, int64_t>, VideoInfo>>();
+                          .value<QPair<QPair<qint64, qint64>, VideoInfo>>();
     check_video_pushed(components, info1_, 1, before_add, after_add);
 }
 
@@ -254,12 +254,12 @@ TEST_F(DatabaseTest, AddTwoVideos) {
 
     auto components1 = video_spy_.takeFirst()
                            .takeFirst()
-                           .value<QPair<QPair<int64_t, int64_t>, VideoInfo>>();
+                           .value<QPair<QPair<qint64, qint64>, VideoInfo>>();
     check_video_pushed(components1, info1_, 1, before_add1, after_add1);
 
     auto components2 = video_spy_.takeFirst()
                            .takeFirst()
-                           .value<QPair<QPair<int64_t, int64_t>, VideoInfo>>();
+                           .value<QPair<QPair<qint64, qint64>, VideoInfo>>();
     check_video_pushed(components2, info2_, 2, before_add1, after_add1);
 }
 

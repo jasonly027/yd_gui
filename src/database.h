@@ -25,10 +25,10 @@ class Database : public QObject {
 
     bool valid() const;
 
-    QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> fetch_first_chunk();
+    QList<QPair<QPair<qint64, qint64>, VideoInfo>> fetch_first_chunk();
 
-    QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> fetch_chunk(
-        int64_t last_id, int64_t last_created_at);
+    QList<QPair<QPair<qint64, qint64>, VideoInfo>> fetch_chunk(
+        qint64 last_id, qint64 last_created_at);
 
    signals:
     void validChanged(bool valid);
@@ -37,14 +37,14 @@ class Database : public QObject {
 
     // Pushes the data needed to construct a ManagedVideo:
     // id, created_at, info
-    void videoPushed(QPair<QPair<int64_t, int64_t>, VideoInfo> video);
+    void videoPushed(QPair<QPair<qint64, qint64>, VideoInfo> video);
 
    public slots:
     void setValid(bool valid);
 
     void addVideo(const VideoInfo& info);
 
-    void removeVideo(int64_t id);
+    void removeVideo(qint64 id);
 
     void removeAllVideos();
 
@@ -66,16 +66,16 @@ class Database : public QObject {
 
     static bool create_formats_table(QSqlDatabase& db);
 
-    static QSqlQuery create_select_first_chunk_videos(QSqlDatabase& db, int64_t chunk_size);
+    static QSqlQuery create_select_first_chunk_videos(QSqlDatabase& db, qint64 chunk_size);
 
     static QSqlQuery create_select_chunk_videos(QSqlDatabase& db,
-                                                int64_t last_id,
-                                                int64_t last_created_at,
-                                                int64_t chunk_size);
+                                                qint64 last_id,
+                                                qint64 last_created_at,
+                                                qint64 chunk_size);
 
-    static QSqlQuery create_select_formats(QSqlDatabase& db, int64_t videos_id);
+    static QSqlQuery create_select_formats(QSqlDatabase& db, qint64 videos_id);
 
-    static QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> extract_videos(
+    static QList<QPair<QPair<qint64, qint64>, VideoInfo>> extract_videos(
         QSqlQuery videos_query, QSqlDatabase& db, Database& this_db);
 
     static QList<VideoFormat> extract_formats(QSqlQuery formats_query,
@@ -83,11 +83,11 @@ class Database : public QObject {
 
     static QSqlQuery create_insert_video(QSqlDatabase& db,
                                          const VideoInfo& info,
-                                         int64_t created_at);
+                                         qint64 created_at);
 
     static QSqlQuery create_insert_format(QSqlDatabase& db,
                                           const VideoFormat& format,
-                                          int64_t videos_id);
+                                          qint64 videos_id);
 
     bool valid_;
     const QString connection_name_;

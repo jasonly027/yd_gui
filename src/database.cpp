@@ -33,7 +33,7 @@ bool Database::valid() const { return valid_; }
 
 static constexpr qint64 kChunkSize = 25;
 
-QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_first_chunk() {
+QList<QPair<QPair<qint64, qint64>, VideoInfo>> Database::fetch_first_chunk() {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
     QSqlQuery videos_query = create_select_first_chunk_videos(db, kChunkSize);
     videos_query.setForwardOnly(true);
@@ -44,7 +44,7 @@ QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_first_chunk() {
     }
 
     // videos is currently in the order of newest to oldest
-    QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> videos =
+    QList<QPair<QPair<qint64, qint64>, VideoInfo>> videos =
         extract_videos(std::move(videos_query), db, *this);
 
     // Must be reversed because it will be PREpended to a model
@@ -55,8 +55,8 @@ QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_first_chunk() {
     return videos;
 }
 
-QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_chunk(
-    const int64_t last_id, const int64_t last_created_at) {
+QList<QPair<QPair<qint64, qint64>, VideoInfo>> Database::fetch_chunk(
+    const qint64 last_id, const qint64 last_created_at) {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
 
     QSqlQuery videos_query =
@@ -69,7 +69,7 @@ QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::fetch_chunk(
     }
 
     // videos is currently in the order of newest to oldest
-    QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> videos =
+    QList<QPair<QPair<qint64, qint64>, VideoInfo>> videos =
         extract_videos(std::move(videos_query), db, *this);
 
     // Must be reversed because it will be PREpended to a model
@@ -91,7 +91,7 @@ void Database::addVideo(const VideoInfo& info) {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
     db.transaction();
 
-    const int64_t created_at = QDateTime::currentSecsSinceEpoch();
+    const qint64 created_at = QDateTime::currentSecsSinceEpoch();
 
     QSqlQuery insert_video = create_insert_video(db, info, created_at);
     if (!insert_video.exec()) {
@@ -101,7 +101,7 @@ void Database::addVideo(const VideoInfo& info) {
     }
 
     QSqlQuery last_id_query(db);
-    int64_t videos_id{};
+    qint64 videos_id{};
     bool ok = false;
     if (last_id_query.exec("SELECT last_insert_rowid();") &&
         last_id_query.next()) {
@@ -132,7 +132,7 @@ void Database::addVideo(const VideoInfo& info) {
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-void Database::removeVideo(const int64_t id) {
+void Database::removeVideo(const qint64 id) {
     const QSqlDatabase db = QSqlDatabase::database(connection_name_);
     QSqlQuery remove_video_query(db);
     remove_video_query.prepare(
@@ -255,9 +255,9 @@ QSqlQuery Database::create_select_first_chunk_videos(QSqlDatabase& db,
 
 // Selected from newest to oldest
 QSqlQuery Database::create_select_chunk_videos(QSqlDatabase& db,
-                                               const int64_t last_id,
-                                               const int64_t last_created_at,
-                                               const int64_t chunk_size) {
+                                               const qint64 last_id,
+                                               const qint64 last_created_at,
+                                               const qint64 chunk_size) {
     QSqlQuery videos_query(db);
     videos_query.prepare(
         "SELECT id, created_at, video_id, title, author,"
@@ -279,7 +279,7 @@ QSqlQuery Database::create_select_chunk_videos(QSqlDatabase& db,
 
 // Selected by oldest to newest
 QSqlQuery Database::create_select_formats(QSqlDatabase& db,
-                                          const int64_t videos_id) {
+                                          const qint64 videos_id) {
     QSqlQuery formats_query(db);
     formats_query.prepare(
         "SELECT format_id, container, width, height, fps "
@@ -293,19 +293,19 @@ QSqlQuery Database::create_select_formats(QSqlDatabase& db,
     return formats_query;
 }
 
-QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> Database::extract_videos(
+QList<QPair<QPair<qint64, qint64>, VideoInfo>> Database::extract_videos(
     QSqlQuery videos_query, QSqlDatabase& db, Database& this_db) {
-    QList<QPair<QPair<int64_t, int64_t>, VideoInfo>> videos;
+    QList<QPair<QPair<qint64, qint64>, VideoInfo>> videos;
     while (videos_query.next()) {
         bool ok = false;
 
-        const int64_t id = videos_query.value(0).toLongLong(&ok);
+        const qint64 id = videos_query.value(0).toLongLong(&ok);
         if (!ok) {
             this_db.log_error("id parse failed");
             continue;
         }
 
-        const int64_t created_at = videos_query.value(1).toLongLong(&ok);
+        const qint64 created_at = videos_query.value(1).toLongLong(&ok);
         if (!ok) {
             this_db.log_error("created_at parse failed");
             continue;
@@ -394,7 +394,7 @@ QList<VideoFormat> Database::extract_formats(QSqlQuery formats_query,
 }
 
 QSqlQuery Database::create_insert_video(QSqlDatabase& db, const VideoInfo& info,
-                                        const int64_t created_at) {
+                                        const qint64 created_at) {
     QSqlQuery insert_video(db);
     insert_video.prepare(
         "INSERT INTO videos"
@@ -423,7 +423,7 @@ QSqlQuery Database::create_insert_video(QSqlDatabase& db, const VideoInfo& info,
 
 QSqlQuery Database::create_insert_format(QSqlDatabase& db,
                                          const VideoFormat& format,
-                                         const int64_t videos_id) {
+                                         const qint64 videos_id) {
     QSqlQuery insert_format(db);
     insert_format.prepare(
         "INSERT INTO formats"
