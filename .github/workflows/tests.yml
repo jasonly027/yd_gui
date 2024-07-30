@@ -11,7 +11,6 @@ jobs:
         runs-on: ${{ matrix.os }}
 
         strategy:
-            # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
             fail-fast: false
 
             matrix:
@@ -49,6 +48,7 @@ jobs:
               uses: jurplel/install-qt-action@v4
               with:
                   version: "6.7.2"
+                  dir: ${{ github.workspace }}/external
                   setup-python: false
 
             - name: Install yt-dlp
@@ -63,8 +63,6 @@ jobs:
                   echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
             - name: Configure CMake
-              # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-              # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
               run: >
                   cmake -B ${{ steps.strings.outputs.build-output-dir }}
                   -G Ninja
