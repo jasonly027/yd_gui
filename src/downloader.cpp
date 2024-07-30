@@ -219,7 +219,7 @@ void Downloader::start_download() {
     QObject::connect(video, &ManagedVideo::requestCancelDownload, yt_dlp,
                      &QProcess::kill);
     QObject::connect(
-        yt_dlp, &QProcess::readyReadStandardOutput, [yt_dlp, video, this] {
+        yt_dlp, &QProcess::readyReadStandardOutput, [yt_dlp, video] {
             const QString data = yt_dlp->readAllStandardOutput();
 
             const QRegularExpression re(

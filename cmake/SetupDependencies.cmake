@@ -17,12 +17,12 @@ CPMAddPackage(
     "JSON_BuildTests OFF"
     "JSON_ImplicitConversions OFF"
 )
-find_package(SQLite3 REQUIRED)
-CPMAddPackage(
-    NAME sqlite_orm
-    GITHUB_REPOSITORY fnc12/sqlite_orm
-    VERSION 1.8.2
-)
+# find_package(SQLite3 REQUIRED)
+# CPMAddPackage(
+#     NAME sqlite_orm
+#     GITHUB_REPOSITORY fnc12/sqlite_orm
+#     VERSION 1.8.2
+# )
 find_package(Qt6 6.7 REQUIRED COMPONENTS Quick Sql Test QuickTest)
 add_compile_definitions(QUICK_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}/tests/qml")
 qt_standard_project_setup(REQUIRES 6.5)

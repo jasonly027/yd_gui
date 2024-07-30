@@ -17,11 +17,11 @@ using std::string;
 
 class VideoFormat {
     Q_GADGET
-    Q_PROPERTY(QString format_id READ format_id CONSTANT);
-    Q_PROPERTY(QString container READ container CONSTANT);
-    Q_PROPERTY(uint32_t width READ width CONSTANT);
-    Q_PROPERTY(uint32_t height READ height CONSTANT);
-    Q_PROPERTY(float fps READ fps CONSTANT);
+    Q_PROPERTY(QString format_id READ format_id CONSTANT)
+    Q_PROPERTY(QString container READ container CONSTANT)
+    Q_PROPERTY(uint32_t width READ width CONSTANT)
+    Q_PROPERTY(uint32_t height READ height CONSTANT)
+    Q_PROPERTY(float fps READ fps CONSTANT)
 
    public:
     explicit VideoFormat(QString format_id, QString container, uint32_t width,
@@ -52,14 +52,14 @@ std::ostream& operator<<(std::ostream& os, const VideoFormat& format);
 
 class VideoInfo {
     Q_GADGET
-    Q_PROPERTY(QString video_id READ video_id CONSTANT);
-    Q_PROPERTY(QString author READ author CONSTANT);
-    Q_PROPERTY(QString title READ title CONSTANT);
-    Q_PROPERTY(uint32_t seconds READ seconds CONSTANT);
-    Q_PROPERTY(QString thumbnail READ thumbnail CONSTANT);
-    Q_PROPERTY(QString url READ url CONSTANT);
-    Q_PROPERTY(QList<VideoFormat> formats READ formats CONSTANT);
-    Q_PROPERTY(bool audio_available READ audio_available CONSTANT);
+    Q_PROPERTY(QString video_id READ video_id CONSTANT)
+    Q_PROPERTY(QString author READ author CONSTANT)
+    Q_PROPERTY(QString title READ title CONSTANT)
+    Q_PROPERTY(uint32_t seconds READ seconds CONSTANT)
+    Q_PROPERTY(QString thumbnail READ thumbnail CONSTANT)
+    Q_PROPERTY(QString url READ url CONSTANT)
+    Q_PROPERTY(QList<VideoFormat> formats READ formats CONSTANT)
+    Q_PROPERTY(bool audio_available READ audio_available CONSTANT)
 
    public:
     explicit VideoInfo(QString video_id, QString title, QString author,
@@ -100,13 +100,13 @@ class ManagedVideo : public QObject {
     QML_ELEMENT
     QML_UNCREATABLE("");
 
-    Q_PROPERTY(int64_t id READ id CONSTANT);
-    Q_PROPERTY(VideoInfo info READ info CONSTANT);
-    Q_PROPERTY(int64_t createdAt READ created_at CONSTANT);
+    Q_PROPERTY(int64_t id READ id CONSTANT)
+    Q_PROPERTY(VideoInfo info READ info CONSTANT)
+    Q_PROPERTY(int64_t createdAt READ created_at CONSTANT)
     Q_PROPERTY(QString progress READ progress WRITE setProgress NOTIFY
-                   progressChanged);
+                   progressChanged)
     Q_PROPERTY(QString selectedFormat READ selected_format WRITE
-                   setSelectedFormat NOTIFY selectedFormatChanged);
+                   setSelectedFormat NOTIFY selectedFormatChanged)
 
    public:
     explicit ManagedVideo(int64_t id, VideoInfo info, int64_t created_at,

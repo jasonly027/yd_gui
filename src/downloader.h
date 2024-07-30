@@ -22,11 +22,11 @@ class Downloader : public QObject {
     QML_ELEMENT
     QML_SINGLETON
 
-    Q_PROPERTY(bool isFetching READ is_fetching NOTIFY isFetchingChanged);
+    Q_PROPERTY(bool isFetching READ is_fetching NOTIFY isFetchingChanged)
     Q_PROPERTY(
-        bool isDownloading READ is_downloading NOTIFY isDownloadingChanged);
+        bool isDownloading READ is_downloading NOTIFY isDownloadingChanged)
     Q_PROPERTY(
-        bool programExists READ program_exists NOTIFY programExistsChanged);
+        bool programExists READ program_exists NOTIFY programExistsChanged)
 
    public:
     explicit Downloader(QObject* parent = nullptr);

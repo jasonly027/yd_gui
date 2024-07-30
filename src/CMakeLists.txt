@@ -12,7 +12,7 @@ target_include_directories("${PROJECT_NAME}_lib" PUBLIC "${PROJECT_SOURCE_DIR}/s
 target_link_libraries("${PROJECT_NAME}_lib" PRIVATE nlohmann_json::nlohmann_json Qt6::Sql)
 
 if(MSVC)
-    target_compile_options("${PROJECT_NAME}_lib" PRIVATE /W4)
+    target_compile_options("${PROJECT_NAME}_lib" PRIVATE /W4 /EHsc /permissive- /analyze)
 else()
     target_compile_options("${PROJECT_NAME}_lib" PRIVATE -Wall -Wextra -Wpedantic)
 endif()

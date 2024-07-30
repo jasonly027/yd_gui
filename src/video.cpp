@@ -4,7 +4,6 @@
 #include <qobject.h>
 
 #include <QDebug>
-#include <algorithm>
 #include <utility>
 
 namespace yd_gui {
@@ -76,10 +75,10 @@ std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
 
 ManagedVideo::ManagedVideo(int64_t id, VideoInfo info, int64_t created_at,
                            QObject* parent)
-    : id_(id),
+    : QObject(parent),
+      id_(id),
       info_(std::move(info)),
-      created_at_(created_at),
-      QObject(parent) {
+      created_at_(created_at) {
     if (!info_.formats().empty()) {
         selected_format_ = info_.formats().last().format_id();
     }
