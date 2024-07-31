@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QSignalSpy>
 #include <exception>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
 
@@ -29,6 +30,15 @@ class VideoFixture : public testing::Test {
                lhs.author() == rhs.author() && lhs.seconds() == rhs.seconds() &&
                lhs.thumbnail() == rhs.thumbnail() &&
                lhs.audio_available() == rhs.audio_available();
+    }
+
+    static void check_is_subset(const QList<VideoFormat>& sublist,
+                                const QList<VideoFormat>& superlist) {
+        const QSet<VideoFormat> superset(superlist.cbegin(), superlist.cend());
+
+        for (const auto& format : sublist) {
+            EXPECT_TRUE(superset.contains(format));
+        }
     }
 
     ManagedVideo cks_video_{
@@ -206,6 +216,12 @@ TEST_F(ParseRawInfoTest, JustFormatsEmpty) {
 
 class DownloaderTest : public VideoFixture {
    protected:
+    DownloaderTest() {
+        QObject::connect(
+            &dl_, &Downloader::standardErrorPushed,
+            [](const QString& data) { std::cerr << data.toStdString(); });
+    }
+
     Downloader dl_;
 
     QSignalSpy fetching_spy_{&dl_, &Downloader::isFetchingChanged};
@@ -226,6 +242,7 @@ TEST_F(DownloaderTest, FetchInfoCks) {
 
     info_pushed_spy_.wait(10000);
 
+    EXPECT_EQ(standard_err_spy_.count(), 0);
     EXPECT_EQ(fetching_spy_.count(), 2);
     EXPECT_EQ(bad_parse_spy_.count(), 0);
     EXPECT_EQ(program_exists_spy_.count(), 0);
@@ -249,10 +266,7 @@ TEST_F(DownloaderTest, FetchInfoJm) {
     auto info = info_pushed_spy_.takeFirst().takeFirst().value<VideoInfo>();
 
     EXPECT_TRUE(infos_equal_no_check_formats(info, jm_info_));
-    EXPECT_EQ(info.formats().at(0), jm_info_.formats().at(0));
-    EXPECT_EQ(info.formats().at(1), jm_info_.formats().at(1));
-    EXPECT_EQ(info.formats().at(2), jm_info_.formats().at(2));
-    EXPECT_EQ(info.formats().last(), jm_info_.formats().last());
+    check_is_subset(jm_info_.formats(), info.formats());
 }
 
 TEST_F(DownloaderTest, EnqueueOneVideo) {

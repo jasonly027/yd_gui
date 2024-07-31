@@ -4,6 +4,7 @@
 #include <qobject.h>
 
 #include <QDebug>
+#include <cstdint>
 #include <utility>
 
 namespace yd_gui {
@@ -22,12 +23,21 @@ uint32_t VideoFormat::width() const { return width_; }
 uint32_t VideoFormat::height() const { return height_; }
 float VideoFormat::fps() const { return fps_; }
 
+bool operator==(const VideoFormat& lhs, const VideoFormat& rhs) {
+    return lhs.format_id() == rhs.format_id() &&
+           lhs.container() == rhs.container() && lhs.width() == rhs.width() &&
+           lhs.height() == rhs.height() && lhs.fps() == rhs.fps();
+}
+
+bool operator!=(const VideoFormat& lhs, const VideoFormat& rhs) {
+    return !(lhs == rhs);
+}
+
 std::ostream& operator<<(std::ostream& os, const VideoFormat& format) {
     os << "VideoFormat{"
        << " format_id: " << format.format_id().toStdString()
        << ", container: " << format.container().toStdString()
-       << ", width: " << format.width()
-       << ", height: " << format.height()
+       << ", width: " << format.width() << ", height: " << format.height()
        << ", fps: " << format.fps() << " }";
     return os;
 }
@@ -53,6 +63,18 @@ const QString& VideoInfo::thumbnail() const { return thumbnail_; }
 const QString& VideoInfo::url() const { return url_; }
 const QList<VideoFormat>& VideoInfo::formats() const { return formats_; }
 const bool& VideoInfo::audio_available() const { return audio_available_; }
+
+bool operator==(const VideoInfo& lhs, const VideoInfo& rhs) {
+    return lhs.video_id() == rhs.video_id() && lhs.title() == rhs.title() &&
+           lhs.author() == rhs.author() && lhs.seconds() == rhs.seconds() &&
+           lhs.thumbnail() == rhs.thumbnail() && lhs.url() == rhs.url() &&
+           lhs.formats() == rhs.formats() &&
+           lhs.audio_available() == rhs.audio_available();
+}
+
+bool operator!=(const VideoInfo& lhs, const VideoInfo& rhs) {
+    return !(lhs == rhs);
+}
 
 std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
     const auto& formats = info.formats();
@@ -111,3 +133,20 @@ const QString& ManagedVideo::selected_format() const {
 }
 
 }  // namespace yd_gui
+
+std::size_t std::hash<yd_gui::VideoFormat>::operator()(
+    const yd_gui::VideoFormat& format) const noexcept {
+    std::size_t h1 = std::hash<QString>{}(format.format_id());
+    std::size_t h2 = std::hash<QString>{}(format.container());
+    std::size_t h3 = std::hash<uint32_t>{}(format.width());
+    std::size_t h4 = std::hash<uint32_t>{}(format.height());
+    std::size_t h5 = std::hash<float>{}(format.fps());
+
+    std::size_t seed = 0;
+    seed ^= h1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= h4 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= h5 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
+}

@@ -14,6 +14,7 @@
 #include <QStringBuilder>
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -205,6 +206,11 @@ QProcess* Downloader::create_generic_process() {
                          QString data = yt_dlp->readAllStandardError();
                          emit this->standardErrorPushed(std::move(data));
                      });
+    QObject::connect(
+        yt_dlp, &QProcess::errorOccurred, this,
+        [this]() {
+            emit this->standardErrorPushed("Process error occured");
+        });
 
     return yt_dlp;
 }
@@ -233,7 +239,8 @@ void Downloader::start_download() {
     QObject::connect(
         yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
         this, [video, this](int exit_code, QProcess::ExitStatus exit_status) {
-            if (exit_status == QProcess::ExitStatus::NormalExit && exit_code == 0) {
+            if (exit_status == QProcess::ExitStatus::NormalExit &&
+                exit_code == 0) {
                 video->setProgress("100%");
             }
             set_is_downloading(false);

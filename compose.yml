@@ -1,0 +1,5 @@
+# Containerized Cross-platform Tests
+services:
+    linux:
+        build:
+            dockerfile: docker/linux.Dockerfile

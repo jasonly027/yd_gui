@@ -1,0 +1,10 @@
+.cache/
+.github/
+.vscode/
+build/
+docker/
+docs/
+.clang*
+.dockerignore
+.editorconfig
+.gitignore
