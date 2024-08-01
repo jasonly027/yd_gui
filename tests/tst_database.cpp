@@ -13,13 +13,12 @@
 #include <QSqlRecord>
 #include <QString>
 #include <QStringBuilder>
-#include <cstdint>
 #include <iostream>
 #include <utility>
 
 #include "video.h"
 
-using std::pair;
+using std::tuple;
 
 namespace yd_gui {
 
@@ -140,12 +139,10 @@ class DatabaseTest : public testing::Test {
     }
 
     static void check_video_pushed(
-        const QPair<QPair<qint64, qint64>, VideoInfo>& components,
+        const tuple<qint64, qint64, VideoInfo>& components,
         const VideoInfo& expected_info, const qint64 expected_id,
         const quint32 before_add, const quint32 after_add) {
-        const auto& id = components.first.first;
-        const auto& created_at = components.first.second;
-        const auto& info = components.second;
+        const auto& [id, created_at, info] = components;
 
         EXPECT_EQ(id, expected_id);
         EXPECT_GE(created_at, before_add);
@@ -176,7 +173,7 @@ class DatabaseTest : public testing::Test {
 
     Database db_{Database::get_temp(connection_name_)};
 
-    QSignalSpy video_spy_{&db_, &Database::videoPushed};
+    QSignalSpy video_spy_{&db_, &Database::videosPushed};
 
     QSignalSpy error_spy_{&db_, &Database::errorPushed};
 
@@ -184,6 +181,14 @@ class DatabaseTest : public testing::Test {
 
     QSqlQuery query_{create_query()};
 };
+
+// Assumes add function works as intended
+TEST_F(DatabaseTest, FetchFirstChunk) {
+    db_.addVideo(info1_);
+    db_.addVideo(info2_);
+
+    auto parts = db_.fetch_first_chunk();
+}
 
 TEST_F(DatabaseTest, SetValidToTrue) {
     db_.setValid(true);
@@ -221,7 +226,8 @@ TEST_F(DatabaseTest, AddOneVideo) {
 
     auto components = video_spy_.takeFirst()
                           .takeFirst()
-                          .value<QPair<QPair<qint64, qint64>, VideoInfo>>();
+                          .value<QList<tuple<qint64, qint64, VideoInfo>>>()
+                          .takeFirst();
     check_video_pushed(components, info1_, 1, before_add, after_add);
 }
 
@@ -254,12 +260,14 @@ TEST_F(DatabaseTest, AddTwoVideos) {
 
     auto components1 = video_spy_.takeFirst()
                            .takeFirst()
-                           .value<QPair<QPair<qint64, qint64>, VideoInfo>>();
+                           .value<QList<tuple<qint64, qint64, VideoInfo>>>()
+                           .takeFirst();
     check_video_pushed(components1, info1_, 1, before_add1, after_add1);
 
     auto components2 = video_spy_.takeFirst()
                            .takeFirst()
-                           .value<QPair<QPair<qint64, qint64>, VideoInfo>>();
+                           .value<QList<tuple<qint64, qint64, VideoInfo>>>()
+                           .takeFirst();
     check_video_pushed(components2, info2_, 2, before_add1, after_add1);
 }
 

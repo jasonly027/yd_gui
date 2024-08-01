@@ -13,8 +13,6 @@
 #include <QDebug>
 #include <QStringBuilder>
 #include <cassert>
-#include <cstdint>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -58,8 +56,8 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
     auto author = QString::fromStdString(
         from_field<string>("channel", info, &basic_json<>::is_string));
 
-    auto seconds = from_field<quint32>(
-        "duration", info, &nlohmann::basic_json<>::is_number_unsigned);
+    auto seconds = from_field<quint32>("duration", info,
+                                       &basic_json<>::is_number_unsigned);
 
     auto thumbnail = QString::fromStdString(
         from_field<string>("thumbnail", info, &basic_json<>::is_string));
@@ -96,16 +94,14 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
             auto container = QString::fromStdString(
                 from_field<string>("ext", format_it, &basic_json<>::is_string));
 
-            auto width = from_field<quint32>(
-                "width", format_it,
-                &nlohmann::basic_json<>::is_number_unsigned);
+            auto width = from_field<quint32>("width", format_it,
+                                             &basic_json<>::is_number_unsigned);
 
             auto height = from_field<quint32>(
-                "height", format_it,
-                &nlohmann::basic_json<>::is_number_unsigned);
+                "height", format_it, &basic_json<>::is_number_unsigned);
 
-            auto fps = from_field<quint32>("fps", format_it,
-                                            &nlohmann::basic_json<>::is_number);
+            auto fps =
+                from_field<quint32>("fps", format_it, &basic_json<>::is_number);
 
             formats << VideoFormat(std::move(format_id), std::move(container),
                                    width, height, fps);
@@ -153,24 +149,6 @@ void Downloader::enqueue_video(ManagedVideo* const video) {
     }
 }
 
-void Downloader::test_enqueue() {
-    VideoInfo info = VideoInfo(
-        "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
-        "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
-        "652eccdcf4d64600015fd610/custom_thumbnail/1080.jpg?1701815955",
-        "https://www.americastestkitchen.com/cookscountry/episode/"
-        "918-sausages-and-salad",
-        {VideoFormat("hls-360", "mp4", 426, 240, 0),
-         VideoFormat("hls-1126", "mp4", 854, 480, 0),
-         VideoFormat("hls-2928", "mp4", 1280, 720, 0),
-         VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-        true);
-    auto* video = new ManagedVideo(0, info, 0, this);
-    video->setSelectedFormat("hls-1126");
-
-    enqueue_video(video);
-}
-
 QProcess* Downloader::create_fetch_process(const QString& url) {
     QProcess* yt_dlp = create_generic_process();
     yt_dlp->setArguments({"--dump-json", url});
@@ -196,21 +174,23 @@ QProcess* Downloader::create_download_process(const QString& format_id,
 // Standard error is forwarded to standardErrorPushed signal.
 QProcess* Downloader::create_generic_process() {
     auto* yt_dlp = new QProcess();
+
     yt_dlp->setProgram(kProgram);
     yt_dlp->setWorkingDirectory(
         QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
+
     QObject::connect(yt_dlp, &QProcess::finished, yt_dlp,
                      &QObject::deleteLater);
+
     QObject::connect(yt_dlp, &QProcess::readyReadStandardError, this,
                      [yt_dlp, this] {
                          QString data = yt_dlp->readAllStandardError();
                          emit this->standardErrorPushed(std::move(data));
                      });
-    QObject::connect(
-        yt_dlp, &QProcess::errorOccurred, this,
-        [this]() {
-            emit this->standardErrorPushed("Process error occured");
-        });
+
+    QObject::connect(yt_dlp, &QProcess::errorOccurred, this, [this]() {
+        emit this->standardErrorPushed("Process error occured");
+    });
 
     return yt_dlp;
 }
@@ -220,10 +200,13 @@ void Downloader::start_download() {
     set_is_downloading(true);
 
     ManagedVideo* const video = queue_.takeFirst();
+
     QProcess* yt_dlp =
         create_download_process(video->selected_format(), video->info().url());
+
     QObject::connect(video, &ManagedVideo::requestCancelDownload, yt_dlp,
                      &QProcess::kill);
+
     QObject::connect(
         yt_dlp, &QProcess::readyReadStandardOutput, [yt_dlp, video] {
             const QString data = yt_dlp->readAllStandardOutput();
@@ -236,6 +219,7 @@ void Downloader::start_download() {
                 video->setProgress(match.captured("percent"));
             }
         });
+
     QObject::connect(
         yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
         this, [video, this](int exit_code, QProcess::ExitStatus exit_status) {

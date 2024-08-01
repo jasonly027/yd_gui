@@ -37,8 +37,6 @@ class Downloader : public QObject {
 
     Q_INVOKABLE void enqueue_video(ManagedVideo* video);
 
-    Q_INVOKABLE void test_enqueue();
-
    signals:
     void isFetchingChanged();
 
