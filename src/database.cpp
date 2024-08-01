@@ -317,7 +317,7 @@ QList<QPair<QPair<qint64, qint64>, VideoInfo>> Database::extract_videos(
 
         QString author = videos_query.value(4).toString();
 
-        const uint32_t seconds = videos_query.value(5).toUInt(&ok);
+        const quint32 seconds = videos_query.value(5).toUInt(&ok);
         if (!ok) {
             this_db.log_error("seconds parse failed");
             continue;
@@ -368,13 +368,13 @@ QList<VideoFormat> Database::extract_formats(QSqlQuery formats_query,
         QString container = formats_query.value(1).toString();
 
         bool ok = false;
-        const uint32_t width = formats_query.value(2).toUInt(&ok);
+        const quint32 width = formats_query.value(2).toUInt(&ok);
         if (!ok) {
             db.log_error("width parse failed");
             continue;
         }
 
-        const uint32_t height = formats_query.value(3).toUInt(&ok);
+        const quint32 height = formats_query.value(3).toUInt(&ok);
         if (!ok) {
             db.log_error("height parse failed");
             continue;

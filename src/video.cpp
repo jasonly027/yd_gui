@@ -8,8 +8,8 @@
 #include <utility>
 
 namespace yd_gui {
-VideoFormat::VideoFormat(QString format_id, QString container, uint32_t width,
-                         uint32_t height, float fps)
+VideoFormat::VideoFormat(QString format_id, QString container, quint32 width,
+                         quint32 height, float fps)
     : format_id_(std::move(format_id)),
       container_(std::move(container)),
       width_(width),
@@ -19,8 +19,8 @@ VideoFormat::VideoFormat(QString format_id, QString container, uint32_t width,
 // Getters
 const QString& VideoFormat::format_id() const { return format_id_; }
 const QString& VideoFormat::container() const { return container_; }
-uint32_t VideoFormat::width() const { return width_; }
-uint32_t VideoFormat::height() const { return height_; }
+quint32 VideoFormat::width() const { return width_; }
+quint32 VideoFormat::height() const { return height_; }
 float VideoFormat::fps() const { return fps_; }
 
 bool operator==(const VideoFormat& lhs, const VideoFormat& rhs) {
@@ -43,7 +43,7 @@ std::ostream& operator<<(std::ostream& os, const VideoFormat& format) {
 }
 
 VideoInfo::VideoInfo(QString video_id, QString title, QString author,
-                     uint32_t seconds, QString thumbnail, QString url,
+                     quint32 seconds, QString thumbnail, QString url,
                      QList<VideoFormat> formats, bool audio_available)
     : video_id_(std::move(video_id)),
       title_(std::move(title)),
@@ -58,7 +58,7 @@ VideoInfo::VideoInfo(QString video_id, QString title, QString author,
 const QString& VideoInfo::video_id() const { return video_id_; }
 const QString& VideoInfo::title() const { return title_; }
 const QString& VideoInfo::author() const { return author_; }
-const uint32_t& VideoInfo::seconds() const { return seconds_; }
+const quint32& VideoInfo::seconds() const { return seconds_; }
 const QString& VideoInfo::thumbnail() const { return thumbnail_; }
 const QString& VideoInfo::url() const { return url_; }
 const QList<VideoFormat>& VideoInfo::formats() const { return formats_; }
@@ -138,8 +138,8 @@ std::size_t std::hash<yd_gui::VideoFormat>::operator()(
     const yd_gui::VideoFormat& format) const noexcept {
     std::size_t h1 = std::hash<QString>{}(format.format_id());
     std::size_t h2 = std::hash<QString>{}(format.container());
-    std::size_t h3 = std::hash<uint32_t>{}(format.width());
-    std::size_t h4 = std::hash<uint32_t>{}(format.height());
+    std::size_t h3 = std::hash<quint32>{}(format.width());
+    std::size_t h4 = std::hash<quint32>{}(format.height());
     std::size_t h5 = std::hash<float>{}(format.fps());
 
     std::size_t seed = 0;

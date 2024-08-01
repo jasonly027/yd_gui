@@ -58,7 +58,7 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
     auto author = QString::fromStdString(
         from_field<string>("channel", info, &basic_json<>::is_string));
 
-    auto seconds = from_field<uint32_t>(
+    auto seconds = from_field<quint32>(
         "duration", info, &nlohmann::basic_json<>::is_number_unsigned);
 
     auto thumbnail = QString::fromStdString(
@@ -96,15 +96,15 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
             auto container = QString::fromStdString(
                 from_field<string>("ext", format_it, &basic_json<>::is_string));
 
-            auto width = from_field<uint32_t>(
+            auto width = from_field<quint32>(
                 "width", format_it,
                 &nlohmann::basic_json<>::is_number_unsigned);
 
-            auto height = from_field<uint32_t>(
+            auto height = from_field<quint32>(
                 "height", format_it,
                 &nlohmann::basic_json<>::is_number_unsigned);
 
-            auto fps = from_field<uint32_t>("fps", format_it,
+            auto fps = from_field<quint32>("fps", format_it,
                                             &nlohmann::basic_json<>::is_number);
 
             formats << VideoFormat(std::move(format_id), std::move(container),

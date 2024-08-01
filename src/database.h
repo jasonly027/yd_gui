@@ -7,7 +7,6 @@
 #include <QObject>
 #include <QPair>
 #include <QtSql/QSqlDatabase>
-#include <cstdint>
 
 #include "video.h"
 

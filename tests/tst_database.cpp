@@ -63,8 +63,8 @@ class DatabaseTest : public testing::Test {
     static void check_video_query(const QSqlRecord& record,
                                   const VideoInfo& expected_info,
                                   const qint64 expected_id,
-                                  const uint32_t before_add,
-                                  const uint32_t after_add) {
+                                  const quint32 before_add,
+                                  const quint32 after_add) {
         bool ok = false;
 
         const qint64 id = record.value(0).toLongLong(&ok);
@@ -113,9 +113,9 @@ class DatabaseTest : public testing::Test {
             // const qint64 id = query.value(0).toLongLong(&ok);
             QString format_id = query.value(1).toString();
             QString container = query.value(2).toString();
-            const uint32_t width = query.value(3).toUInt(&ok);
+            const quint32 width = query.value(3).toUInt(&ok);
             EXPECT_TRUE(ok);
-            const uint32_t height = query.value(4).toUInt(&ok);
+            const quint32 height = query.value(4).toUInt(&ok);
             EXPECT_TRUE(ok);
             const float fps = query.value(5).toFloat(&ok);
             EXPECT_TRUE(ok);
@@ -132,8 +132,8 @@ class DatabaseTest : public testing::Test {
     }
 
     void check_add(const QSqlRecord& record, const VideoInfo& expected_info,
-                   const qint64 expected_id, const uint32_t before_add,
-                   const uint32_t after_add) {
+                   const qint64 expected_id, const quint32 before_add,
+                   const quint32 after_add) {
         check_video_query(record, expected_info, expected_id, before_add,
                           after_add);
         check_formats_query(expected_info.formats(), expected_id);
@@ -142,7 +142,7 @@ class DatabaseTest : public testing::Test {
     static void check_video_pushed(
         const QPair<QPair<qint64, qint64>, VideoInfo>& components,
         const VideoInfo& expected_info, const qint64 expected_id,
-        const uint32_t before_add, const uint32_t after_add) {
+        const quint32 before_add, const quint32 after_add) {
         const auto& id = components.first.first;
         const auto& created_at = components.first.second;
         const auto& info = components.second;
@@ -201,9 +201,9 @@ TEST_F(DatabaseTest, SetValidToFalse) {
 }
 
 TEST_F(DatabaseTest, AddOneVideo) {
-    uint32_t before_add = QDateTime::currentSecsSinceEpoch();
+    quint32 before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
-    uint32_t after_add = QDateTime::currentSecsSinceEpoch();
+    quint32 after_add = QDateTime::currentSecsSinceEpoch();
 
     EXPECT_EQ(error_spy_.count(), 0);
 
@@ -226,15 +226,15 @@ TEST_F(DatabaseTest, AddOneVideo) {
 }
 
 TEST_F(DatabaseTest, AddTwoVideos) {
-    uint32_t before_add1 = QDateTime::currentSecsSinceEpoch();
+    quint32 before_add1 = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
-    uint32_t after_add1 = QDateTime::currentSecsSinceEpoch();
+    quint32 after_add1 = QDateTime::currentSecsSinceEpoch();
 
     EXPECT_EQ(get_num_rows_in_videos(), 1);
 
-    uint32_t before_add2 = QDateTime::currentSecsSinceEpoch();
+    quint32 before_add2 = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
-    uint32_t after_add2 = QDateTime::currentSecsSinceEpoch();
+    quint32 after_add2 = QDateTime::currentSecsSinceEpoch();
 
     EXPECT_EQ(get_num_rows_in_videos(), 2);
 
@@ -298,9 +298,9 @@ TEST_F(DatabaseTest, RemoveOneVideo) {
 
 TEST_F(DatabaseTest, RemoveFirstOfTwoVideos) {
     db_.addVideo(info1_);
-    uint32_t before_add = QDateTime::currentSecsSinceEpoch();
+    quint32 before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
-    uint32_t after_add = QDateTime::currentSecsSinceEpoch();
+    quint32 after_add = QDateTime::currentSecsSinceEpoch();
     EXPECT_EQ(get_num_rows_in_videos(), 2);
 
     db_.removeVideo(1);
@@ -318,9 +318,9 @@ TEST_F(DatabaseTest, RemoveFirstOfTwoVideos) {
 }
 
 TEST_F(DatabaseTest, RemoveSecondOfTwoVideos) {
-    uint32_t before_add = QDateTime::currentSecsSinceEpoch();
+    quint32 before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
-    uint32_t after_add = QDateTime::currentSecsSinceEpoch();
+    quint32 after_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
     EXPECT_EQ(get_num_rows_in_videos(), 2);
 

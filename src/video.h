@@ -19,13 +19,13 @@ class VideoFormat {
     Q_GADGET
     Q_PROPERTY(QString format_id READ format_id CONSTANT)
     Q_PROPERTY(QString container READ container CONSTANT)
-    Q_PROPERTY(uint32_t width READ width CONSTANT)
-    Q_PROPERTY(uint32_t height READ height CONSTANT)
+    Q_PROPERTY(quint32 width READ width CONSTANT)
+    Q_PROPERTY(quint32 height READ height CONSTANT)
     Q_PROPERTY(float fps READ fps CONSTANT)
 
    public:
-    explicit VideoFormat(QString format_id, QString container, uint32_t width,
-                         uint32_t height, float fps);
+    explicit VideoFormat(QString format_id, QString container, quint32 width,
+                         quint32 height, float fps);
     explicit VideoFormat() = default;
     VideoFormat(const VideoFormat& other) = default;
     VideoFormat& operator=(const VideoFormat& other) = default;
@@ -34,15 +34,15 @@ class VideoFormat {
 
     const QString& format_id() const;
     const QString& container() const;
-    uint32_t width() const;
-    uint32_t height() const;
+    quint32 width() const;
+    quint32 height() const;
     float fps() const;
 
    private:
     QString format_id_;    // format_id
     QString container_;    // file extension
-    uint32_t width_ = 0;   // width
-    uint32_t height_ = 0;  // height
+    quint32 width_ = 0;   // width
+    quint32 height_ = 0;  // height
     float fps_ = 0.0;      // fps
 };
 
@@ -57,7 +57,7 @@ class VideoInfo {
     Q_PROPERTY(QString video_id READ video_id CONSTANT)
     Q_PROPERTY(QString author READ author CONSTANT)
     Q_PROPERTY(QString title READ title CONSTANT)
-    Q_PROPERTY(uint32_t seconds READ seconds CONSTANT)
+    Q_PROPERTY(quint32 seconds READ seconds CONSTANT)
     Q_PROPERTY(QString thumbnail READ thumbnail CONSTANT)
     Q_PROPERTY(QString url READ url CONSTANT)
     Q_PROPERTY(QList<VideoFormat> formats READ formats CONSTANT)
@@ -65,7 +65,7 @@ class VideoInfo {
 
    public:
     explicit VideoInfo(QString video_id, QString title, QString author,
-                       uint32_t seconds, QString thumbnail, QString url,
+                       quint32 seconds, QString thumbnail, QString url,
                        QList<VideoFormat> formats, bool audio_available);
     explicit VideoInfo() = default;
     VideoInfo(const VideoInfo& other) = default;
@@ -76,7 +76,7 @@ class VideoInfo {
     const QString& video_id() const;
     const QString& title() const;
     const QString& author() const;
-    const uint32_t& seconds() const;
+    const quint32& seconds() const;
     const QString& thumbnail() const;
     const QString& url() const;
     const QList<VideoFormat>& formats() const;
@@ -86,7 +86,7 @@ class VideoInfo {
     QString video_id_;              // video_id
     QString title_;                 // title of video
     QString author_;                // channel where video is from
-    uint32_t seconds_ = 0;          // duration of video in seconds
+    quint32 seconds_ = 0;          // duration of video in seconds
     QString thumbnail_;             // thumbnail url
     QString url_;                   // url of video
     QList<VideoFormat> formats_;    // list of formats
