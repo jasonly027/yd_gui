@@ -38,10 +38,10 @@ jobs:
             - name: Setup MSVC
               uses: ilammy/msvc-dev-cmd@v1
 
-            - name: Install Ninja
+            - name: Setup Ninja
               uses: seanmiddleditch/gha-setup-ninja@master
 
-            - name: Install Qt (Not for macos-latest)
+            - name: Setup Qt (Not for macos-latest)
               if: matrix.os != 'macos-latest'
               uses: jurplel/install-qt-action@v4
               with:
@@ -49,18 +49,15 @@ jobs:
                   dir: ${{ github.workspace }}/external
                   setup-python: false
 
-            - name: Install Qt (For macos-latest)
+            - name: Setup Qt (For macos-latest)
               if: matrix.os == 'macos-latest'
               run: brew install qt
 
-            - name: Setup FFmpeg (For macos-latest)
-              if: matrix.os == 'macos-latest'
+            - name: Setup FFmpeg
               uses: AnimMouse/setup-ffmpeg@v1
 
-            - name: Install yt-dlp
+            - name: Setup yt-dlp
               uses: AnimMouse/setup-yt-dlp@v1
-              with:
-                  with-ffmpeg: true
 
             - name: Set reusable strings
               id: strings
