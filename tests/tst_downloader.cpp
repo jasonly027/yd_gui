@@ -37,7 +37,7 @@ class VideoFixture : public testing::Test {
         const QSet<VideoFormat> superset(superlist.cbegin(), superlist.cend());
 
         for (const auto& format : sublist) {
-            EXPECT_TRUE(superset.contains(format));
+            EXPECT_TRUE(superset.contains(format)) << "Format: " << format;
         }
     }
 

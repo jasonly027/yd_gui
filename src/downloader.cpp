@@ -13,6 +13,7 @@
 #include <QDebug>
 #include <QStringBuilder>
 #include <cassert>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -188,9 +189,12 @@ QProcess* Downloader::create_generic_process() {
                          emit this->standardErrorPushed(std::move(data));
                      });
 
-    QObject::connect(yt_dlp, &QProcess::errorOccurred, this, [this]() {
-        emit this->standardErrorPushed("Process error occured");
-    });
+    QObject::connect(
+        yt_dlp, &QProcess::errorOccurred, this,
+        [this](QProcess::ProcessError err) {
+            std::cerr << "Process error occured, Code: " << err << '\n';
+            emit this->standardErrorPushed("Process error occured");
+        });
 
     return yt_dlp;
 }

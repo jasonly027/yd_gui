@@ -3,3 +3,8 @@ services:
     linux:
         build:
             dockerfile: docker/linux.Dockerfile
+        volumes:
+            - cpm_cache:/home/user/.cpm_cache
+
+volumes:
+    cpm_cache:

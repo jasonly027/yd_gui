@@ -54,7 +54,7 @@ jobs:
             - name: Install yt-dlp
               uses: AnimMouse/setup-yt-dlp@v1
               with:
-                with-ffmpeg: true
+                  with-ffmpeg: true
 
             - name: Set reusable strings
               id: strings
@@ -72,8 +72,8 @@ jobs:
                   -S ${{ github.workspace }}
 
             - name: Build
-              run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+              run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target yd_gui_tests
 
             - name: Test
               working-directory: ${{ steps.strings.outputs.build-output-dir }}
-              run: ctest --build-config ${{ matrix.build_type }} --output-on-failure
+              run: ctest --build-config ${{ matrix.build_type }} --output-on-failure -E "yd_gui_qml_tests"

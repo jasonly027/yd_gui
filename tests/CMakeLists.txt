@@ -26,7 +26,7 @@ target_compile_definitions("${PROJECT_NAME}_tests"
 if(MSVC)
     target_compile_options("${PROJECT_NAME}_tests" PRIVATE /W4)
 else()
-    target_compile_options("${PROJECT_NAME}_tests" PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options("${PROJECT_NAME}_tests" PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 # Using Qt Quick Test

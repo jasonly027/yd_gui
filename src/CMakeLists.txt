@@ -14,7 +14,7 @@ target_link_libraries("${PROJECT_NAME}_lib" PRIVATE nlohmann_json::nlohmann_json
 if(MSVC)
     target_compile_options("${PROJECT_NAME}_lib" PRIVATE /W4 /EHsc /permissive- /analyze)
 else()
-    target_compile_options("${PROJECT_NAME}_lib" PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options("${PROJECT_NAME}_lib" PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
