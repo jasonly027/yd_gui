@@ -1,6 +1,7 @@
 #include "downloader.h"
 
 #include <qcontainerfwd.h>
+#include <qdir.h>
 #include <qobject.h>
 #include <qoverload.h>
 #include <qpointer.h>
@@ -177,8 +178,12 @@ QProcess* Downloader::create_generic_process() {
     auto* yt_dlp = new QProcess();
 
     yt_dlp->setProgram(kProgram);
-    yt_dlp->setWorkingDirectory(
-        QStandardPaths::writableLocation(QStandardPaths::DownloadLocation));
+
+    if (QString dir =
+            QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+        QDir(dir).exists()) {
+        yt_dlp->setWorkingDirectory(dir);
+    }
 
     QObject::connect(yt_dlp, &QProcess::finished, yt_dlp,
                      &QObject::deleteLater);

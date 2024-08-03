@@ -9,9 +9,7 @@ RUN apt-get update &&\
 
 WORKDIR /app
 
-RUN mkdir /home/user/Downloads
-
-RUN chown -R user /app /home/user/Downloads
+RUN chown -R user /app
 
 COPY . /app
 
