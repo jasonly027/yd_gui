@@ -41,12 +41,17 @@ jobs:
             - name: Install Ninja
               uses: seanmiddleditch/gha-setup-ninja@master
 
-            - name: Install Qt
+            - name: Install Qt (Not for macos-latest)
+              if: matrix.os != 'macos-latest'
               uses: jurplel/install-qt-action@v4
               with:
                   version: "6.7.2"
                   dir: ${{ github.workspace }}/external
                   setup-python: false
+
+            - name: Install Qt (For macos-latest)
+              if: matrix.os == 'macos-latest'
+              run: brew install qt
 
             - name: Install yt-dlp
               uses: AnimMouse/setup-yt-dlp@v1
