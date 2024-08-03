@@ -2,9 +2,9 @@
 
 #include <qlogging.h>
 #include <qobject.h>
+#include <qtypes.h>
 
 #include <QDebug>
-#include <cstdint>
 #include <utility>
 
 namespace yd_gui {
@@ -95,16 +95,21 @@ std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
     return os;
 }
 
-ManagedVideo::ManagedVideo(qint64 id, VideoInfo info, qint64 created_at,
+ManagedVideo::ManagedVideo(qint64 id, qint64 created_at, VideoInfo info,
                            QObject* parent)
     : QObject(parent),
       id_(id),
+      created_at_(created_at),
       info_(std::move(info)),
-      created_at_(created_at) {
+      selected_format_(
+          !info_.formats().empty() ? info_.formats().last().format_id() : "") {
     if (!info_.formats().empty()) {
         selected_format_ = info_.formats().last().format_id();
     }
 }
+
+ManagedVideo::ManagedVideo(ManagedVideoParts parts, QObject* parent)
+    : ManagedVideo(get<0>(parts), get<1>(parts), get<2>(parts), parent) {};
 
 ManagedVideo::~ManagedVideo() { emit this->requestCancelDownload(); }
 
@@ -122,9 +127,9 @@ void ManagedVideo::setSelectedFormat(QString selected_format) {
 
 qint64 ManagedVideo::id() const { return id_; }
 
-const VideoInfo& ManagedVideo::info() const { return info_; }
-
 qint64 ManagedVideo::created_at() const { return created_at_; }
+
+const VideoInfo& ManagedVideo::info() const { return info_; }
 
 QString ManagedVideo::progress() const { return progress_; }
 

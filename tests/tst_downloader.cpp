@@ -42,7 +42,7 @@ class VideoFixture : public testing::Test {
     }
 
     ManagedVideo cks_video_{
-        0,
+        0, 0,
         VideoInfo(
             "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
             "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
@@ -53,10 +53,9 @@ class VideoFixture : public testing::Test {
              VideoFormat("hls-1126", "mp4", 854, 480, 0),
              VideoFormat("hls-2928", "mp4", 1280, 720, 0),
              VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-            true),
-        0};
+            true)};
     ManagedVideo jm_video_{
-        1,
+        1, 1,
         VideoInfo("Sv3LXGWKw6Q",
                   "Should this be the future of Angular applications?",
                   "Joshua Morony", 341,
@@ -67,10 +66,9 @@ class VideoFixture : public testing::Test {
                    VideoFormat("394", "mp4", 256, 144, 30),
                    VideoFormat("278", "webm", 256, 144, 30),
                    VideoFormat("625", "mp4", 3840, 2160, 30)},
-                  true),
-        1};
+                  true)};
     ManagedVideo zoo_video_{
-        2,
+        2, 2,
         VideoInfo("jNQXAC9IVRw", "Me at the zoo", "jawed", 19,
                   "https://i.ytimg.com/vi/jNQXAC9IVRw/"
                   "hqdefault.jpg?sqp=-oaymwEmCOADEOgC8quKqQMa8AEB-AG-"
@@ -82,8 +80,7 @@ class VideoFixture : public testing::Test {
                    VideoFormat("278", "webm", 192, 144, 15),
                    VideoFormat("269", "mp4", 192, 144, 15),
                    VideoFormat("604", "mp4", 320, 240, 15)},
-                  true),
-        2};
+                  true)};
 
     const VideoInfo& jm_info_ = jm_video_.info();
     const VideoInfo& cks_info_ = cks_video_.info();

@@ -7,7 +7,6 @@
 #include <QList>
 #include <QObject>
 #include <QtSql/QSqlDatabase>
-#include <tuple>
 
 #include "video.h"
 
@@ -23,21 +22,21 @@ class Database : public QObject {
 
     static Database get_temp(const QString& connection_name);
 
+    static constexpr qint64 kChunkSize = 25;
+
     bool valid() const;
 
-    QList<std::tuple<qint64, qint64, VideoInfo>> fetch_first_chunk();
+    QList<ManagedVideoParts> fetch_first_chunk();
 
-    QList<std::tuple<qint64, qint64, VideoInfo>> fetch_chunk(
-        qint64 last_id, qint64 last_created_at);
+    QList<ManagedVideoParts> fetch_chunk(qint64 last_id,
+                                         qint64 last_created_at);
 
    signals:
     void validChanged(bool valid);
 
     void errorPushed(QString error);
 
-    // Pushes the data needed to construct a ManagedVideo:
-    // id, created_at, info
-    void videosPushed(QList<std::tuple<qint64, qint64, VideoInfo>> videos);
+    void videosPushed(QList<ManagedVideoParts> videos);
 
    public slots:
     void setValid(bool valid);
@@ -49,19 +48,22 @@ class Database : public QObject {
     void removeAllVideos();
 
    private:
-    void log_error(QString message);
-
-    friend QList<std::tuple<qint64, qint64, VideoInfo>> extract_videos(
-        QSqlQuery videos_query, QSqlDatabase& db, Database& this_db);
+    friend QList<ManagedVideoParts> extract_videos(QSqlQuery videos_query,
+                                                   QSqlDatabase& db,
+                                                   Database& this_db);
 
     friend QList<VideoFormat> extract_formats(QSqlQuery formats_query,
                                               Database& db);
+
+    void log_error(QString message);
 
     static constexpr auto kDatabaseFileName = "history.db";
 
     explicit Database(const QString& file_name = kDatabaseFileName,
                       QString connection_name = kDatabaseFileName,
                       QObject* parent = nullptr);
+
+    QList<ManagedVideoParts> fetch_chunk_impl(QSqlDatabase db, QSqlQuery query);
 
     bool valid_;
     const QString connection_name_;

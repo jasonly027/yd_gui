@@ -10,7 +10,7 @@ namespace yd_gui {
 VideoListModel::VideoListModel(QObject* parent) : QAbstractListModel(parent) {
     videos_
         << new ManagedVideo(
-               0,
+               0, 0,
                VideoInfo(
                    "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
                    "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
@@ -22,10 +22,9 @@ VideoListModel::VideoListModel(QObject* parent) : QAbstractListModel(parent) {
                     VideoFormat("hls-1126", "mp4", 854, 480, 0),
                     VideoFormat("hls-2928", "mp4", 1280, 720, 0),
                     VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-                   true),
-               0)
+                   true))
         << new ManagedVideo(
-               1,
+               1, 0,
                VideoInfo(
                    "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
                    "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
@@ -37,10 +36,9 @@ VideoListModel::VideoListModel(QObject* parent) : QAbstractListModel(parent) {
                     VideoFormat("hls-1126", "mp4", 854, 480, 0),
                     VideoFormat("hls-2928", "mp4", 1280, 720, 0),
                     VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-                   true),
-               0)
+                   true))
         << new ManagedVideo(
-               2,
+               2, 0,
                VideoInfo(
                    "652eccdcf4d64600015fd610", "Sausages and Salad", "", 1438,
                    "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
@@ -52,8 +50,7 @@ VideoListModel::VideoListModel(QObject* parent) : QAbstractListModel(parent) {
                     VideoFormat("hls-1126", "mp4", 854, 480, 0),
                     VideoFormat("hls-2928", "mp4", 1280, 720, 0),
                     VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-                   true),
-               0);
+                   true));
 }
 
 VideoListModel::~VideoListModel() { qDeleteAll(videos_); }

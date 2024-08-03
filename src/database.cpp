@@ -105,6 +105,7 @@ QSqlQuery create_select_first_chunk_videos(QSqlDatabase& db,
 
         "LIMIT :limit;");
     videos_query.bindValue(":limit", chunk_size);
+    videos_query.setForwardOnly(true);
 
     return videos_query;
 }
@@ -125,9 +126,10 @@ QSqlQuery create_select_chunk_videos(QSqlDatabase& db, const qint64 last_id,
         "ORDER BY created_at DESC, id DESC "
 
         "LIMIT :limit;");
-    videos_query.bindValue(":id", last_id);
+    videos_query.bindValue(":last_id", last_id);
     videos_query.bindValue(":last_created_at", last_created_at);
     videos_query.bindValue(":limit", chunk_size);
+    videos_query.setForwardOnly(true);
 
     return videos_query;
 }
@@ -139,20 +141,20 @@ QSqlQuery create_select_formats(QSqlDatabase& db, const qint64 videos_id) {
         "SELECT format_id, container, width, height, fps "
         "FROM formats "
 
-        "WHERE videos_id = :id "
+        "WHERE videos_id = :videos_id "
 
         "ORDER BY id ASC;");
     formats_query.bindValue(":videos_id", videos_id);
+    formats_query.setForwardOnly(true);
 
     return formats_query;
 }
 
 QList<VideoFormat> extract_formats(QSqlQuery formats_query, Database& db);
 
-QList<tuple<qint64, qint64, VideoInfo>> extract_videos(QSqlQuery videos_query,
-                                                       QSqlDatabase& db,
-                                                       Database& this_db) {
-    QList<tuple<qint64, qint64, VideoInfo>> videos;
+QList<ManagedVideoParts> extract_videos(QSqlQuery videos_query,
+                                        QSqlDatabase& db, Database& this_db) {
+    QList<ManagedVideoParts> videos;
     while (videos_query.next()) {
         bool ok = false;
 
@@ -191,7 +193,6 @@ QList<tuple<qint64, qint64, VideoInfo>> extract_videos(QSqlQuery videos_query,
         const bool audio_available = videos_query.value(8).toBool();
 
         QSqlQuery formats_query = create_select_formats(db, id);
-        formats_query.setForwardOnly(true);
 
         ok = formats_query.exec();
         if (!ok) {
@@ -199,8 +200,7 @@ QList<tuple<qint64, qint64, VideoInfo>> extract_videos(QSqlQuery videos_query,
             continue;
         }
 
-        auto formats =
-            extract_formats(std::move(formats_query), this_db);
+        auto formats = extract_formats(std::move(formats_query), this_db);
 
         videos << make_tuple(
             id, created_at,
@@ -314,21 +314,32 @@ Database Database::get_temp(const QString& connection_name) {
 
 bool Database::valid() const { return valid_; }
 
-static constexpr qint64 kChunkSize = 25;
-
-QList<tuple<qint64, qint64, VideoInfo>> Database::fetch_first_chunk() {
+QList<ManagedVideoParts> Database::fetch_first_chunk() {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
 
-    QSqlQuery videos_query = create_select_first_chunk_videos(db, kChunkSize);
-    videos_query.setForwardOnly(true);
+    return fetch_chunk_impl(db,
+                            create_select_first_chunk_videos(db, kChunkSize));
+}
 
-    if (!videos_query.exec()) {
+QList<ManagedVideoParts> Database::fetch_chunk(const qint64 last_id,
+                                               const qint64 last_created_at) {
+    QSqlDatabase db = QSqlDatabase::database(connection_name_);
+
+    return fetch_chunk_impl(db, create_select_chunk_videos(
+                                    db, last_id, last_created_at, kChunkSize));
+}
+
+// Query should be passed from create_select_first_chunk_videos() or
+// create_select_chunk_videos()
+QList<ManagedVideoParts> Database::fetch_chunk_impl(QSqlDatabase db,
+                                                    QSqlQuery query) {
+    if (!query.exec()) {
         log_error("Failed to fetch chunk of history");
         return {};
     }
 
     // videos is currently in the order of newest to oldest
-    auto videos = extract_videos(std::move(videos_query), db, *this);
+    auto videos = extract_videos(std::move(query), db, *this);
 
     // Must be reversed because it will be PREpended to a model
     // that has videos from oldest to newest.
@@ -336,34 +347,6 @@ QList<tuple<qint64, qint64, VideoInfo>> Database::fetch_first_chunk() {
     std::reverse(videos.begin(), videos.end());
 
     return videos;
-}
-
-QList<tuple<qint64, qint64, VideoInfo>> Database::fetch_chunk(
-    const qint64 last_id, const qint64 last_created_at) {
-    QSqlDatabase db = QSqlDatabase::database(connection_name_);
-
-    QSqlQuery videos_query =
-        create_select_chunk_videos(db, last_id, last_created_at, kChunkSize);
-    videos_query.setForwardOnly(true);
-
-    if (!videos_query.exec()) {
-        log_error("Failed to fetch chunk of history");
-        return {};
-    }
-
-    // videos is currently in the order of newest to oldest
-    auto videos = extract_videos(std::move(videos_query), db, *this);
-
-    // Must be reversed because it will be PREpended to a model
-    // that has videos from oldest to newest.
-    // i.e., after reversal, videos should now be from oldest to newest.
-    std::reverse(videos.begin(), videos.end());
-
-    return videos;
-}
-
-void Database::log_error(QString message) {
-    emit errorPushed("[History] " % std::move(message));
 }
 
 void Database::setValid(const bool valid) {
@@ -434,6 +417,10 @@ void Database::removeAllVideos() {
     QSqlQuery remove_all_query(db);
     if (!remove_all_query.exec("DELETE FROM videos"))
         log_error("Failed to clear");
+}
+
+void Database::log_error(QString message) {
+    emit errorPushed("[History] " % std::move(message));
 }
 
 Database::Database(const QString& file_name, QString connection_name,
