@@ -1,20 +1,17 @@
 #pragma once
 
-#include <qobject.h>
-#include <qqmlintegration.h>
 #include <qtmetamacros.h>
-#include <qtypes.h>
 
 #include <QList>
 #include <QObject>
 #include <QString>
+#include <QtQmlIntegration>
+#include <QtTypes>
 #include <cstddef>
 #include <ostream>
-#include <string>
+#include <tuple>
 
 namespace yd_gui {
-
-using std::string;
 
 class VideoFormat {
     Q_GADGET

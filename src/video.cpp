@@ -1,10 +1,9 @@
 #include "video.h"
 
-#include <qlogging.h>
-#include <qobject.h>
-#include <qtypes.h>
+#include <qtmetamacros.h>
 
 #include <QDebug>
+#include <QtLogging>
 #include <utility>
 
 namespace yd_gui {

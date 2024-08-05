@@ -1,15 +1,15 @@
 #pragma once
 
-#include <qabstractitemmodel.h>
-#include <qhash.h>
-#include <qlist.h>
 #include <qnamespace.h>
-#include <qobject.h>
-#include <qqmlintegration.h>
 #include <qtmetamacros.h>
-#include <qvariant.h>
 
+#include <QAbstractItemModel>
 #include <QAbstractListModel>
+#include <QHash>
+#include <QList>
+#include <QObject>
+#include <QVariant>
+#include <QtQmlIntegration>
 
 #include "video.h"
 
@@ -39,6 +39,9 @@ class VideoListModel : public QAbstractListModel {
                   int role = Qt::DisplayRole) const override;
 
     QHash<int, QByteArray> roleNames() const override;
+
+   public slots:  // NOLINT(readability-redundant-access-specifiers)
+                  // void addVideos(QList<ManagedVideoParts>);
 
    private:
     QList<ManagedVideo*> videos_;

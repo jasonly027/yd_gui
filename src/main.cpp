@@ -1,4 +1,9 @@
+#include <QtCore/qobjectdefs.h>
+#include <qnamespace.h>
+
+#include <QCoreApplication>
 #include <QGuiApplication>
+#include <QObject>
 #include <QQmlApplicationEngine>
 
 int main(int argc, char* argv[]) {

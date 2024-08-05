@@ -1,18 +1,17 @@
 #include "downloader.h"
 
-#include <qcontainerfwd.h>
-#include <qdir.h>
-#include <qobject.h>
-#include <qoverload.h>
-#include <qpointer.h>
-#include <qprocess.h>
-#include <qqmlintegration.h>
-#include <qregularexpression.h>
-#include <qstandardpaths.h>
 #include <qtmetamacros.h>
 
 #include <QDebug>
+#include <QDir>
+#include <QList>
+#include <QObject>
+#include <QOverload>
+#include <QProcess>
+#include <QRegularExpression>
+#include <QStandardPaths>
 #include <QStringBuilder>
+#include <QtQmlIntegration>
 #include <cassert>
 #include <iostream>
 #include <nlohmann/json.hpp>

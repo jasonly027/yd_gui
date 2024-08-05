@@ -1,8 +1,5 @@
 #pragma once
 
-#include <qobject.h>
-#include <qprocess.h>
-#include <qqmlintegration.h>
 #include <qtmetamacros.h>
 
 #include <QList>
@@ -10,6 +7,7 @@
 #include <QProcess>
 #include <QSharedPointer>
 #include <QtQml>
+#include <QtQmlIntegration>
 #include <optional>
 
 #include "video.h"

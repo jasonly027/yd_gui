@@ -1,10 +1,11 @@
 #include "video_list_model.h"
 
-#include <qalgorithms.h>
-#include <qstringview.h>
-#include <qvariant.h>
+#include <QByteArray>
+#include <QVariant>
+#include <QtAlgorithms>
 
 #include "video.h"
+
 
 namespace yd_gui {
 VideoListModel::VideoListModel(QObject* parent) : QAbstractListModel(parent) {

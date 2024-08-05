@@ -1,15 +1,11 @@
 #include "database.h"
 
-#include <QtSql/qsqldatabase.h>
-#include <qdatetime.h>
-#include <qobject.h>
-#include <qsqlquery.h>
-#include <qtypes.h>
-
 #include <QDateTime>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStringBuilder>
+#include <QtTypes>
 #include <algorithm>
 #include <tuple>
 

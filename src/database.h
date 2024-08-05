@@ -1,12 +1,11 @@
-#include <qobject.h>
-#include <qsqldatabase.h>
-#include <qsqlquery.h>
 #include <qtmetamacros.h>
-#include <qtypes.h>
 
 #include <QList>
 #include <QObject>
+#include <QSqlQuery>
+#include <QString>
 #include <QtSql/QSqlDatabase>
+#include <QtTypes>
 
 #include "video.h"
 

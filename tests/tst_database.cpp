@@ -1,20 +1,18 @@
 #include <database.h>
 #include <downloader.h>
 #include <gtest/gtest.h>
-#include <qdatetime.h>
-#include <qobject.h>
-#include <qsignalspy.h>
-#include <qsqldatabase.h>
-#include <qsqldriver.h>
-#include <qsqlquery.h>
-#include <qsqlrecord.h>
-#include <qtypes.h>
 
+#include <QDateTime>
+#include <QObject>
+#include <QSignalSpy>
+#include <QSqlDatabase>
 #include <QSqlDriver>
+#include <QSqlQuery>
 #include <QSqlRecord>
 #include <QString>
 #include <QStringBuilder>
-#include <algorithm>
+#include <Qstring>
+#include <QtTypes>
 #include <iostream>
 #include <limits>
 #include <utility>
