@@ -3,15 +3,16 @@ FROM stateoftheartio/qt6:6.6-gcc-aqt
 USER root
 
 RUN apt-get update &&\
-    apt-get -y install software-properties-common &&\
-    add-apt-repository ppa:tomtomtom/yt-dlp &&\
-    apt-get -y install libglx-dev libgl1-mesa-dev yt-dlp
+    apt-get -y install libglx-dev libgl1-mesa-dev
+
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp &&\
+    chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app
 
-RUN chown -R user /app
-
 COPY . /app
+
+RUN chown -R user /app
 
 USER user
 
