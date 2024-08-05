@@ -1,5 +1,7 @@
 #include "downloader.h"
 
+#include <qobject.h>
+#include <qprocess.h>
 #include <qtmetamacros.h>
 
 #include <QDebug>
@@ -144,7 +146,11 @@ void Downloader::fetch_info(const QString& url) {
 }
 
 void Downloader::enqueue_video(ManagedVideo* const video) {
+    QObject::connect(video, &ManagedVideo::requestCancelDownload, this,
+                     [this, video]() { queue_.removeOne(video); });
+
     queue_ << video;
+
     if (queue_.size() == 1 && !is_downloading_) {
         start_download();
     }
@@ -216,7 +222,7 @@ void Downloader::start_download() {
                      &QProcess::kill);
 
     QObject::connect(
-        yt_dlp, &QProcess::readyReadStandardOutput, [yt_dlp, video] {
+        yt_dlp, &QProcess::readyReadStandardOutput, video, [yt_dlp, video] {
             const QString data = yt_dlp->readAllStandardOutput();
 
             const QRegularExpression re(
@@ -230,14 +236,17 @@ void Downloader::start_download() {
 
     QObject::connect(
         yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-        this, [video, this](int exit_code, QProcess::ExitStatus exit_status) {
+        video, [video](int exit_code, QProcess::ExitStatus exit_status) {
             if (exit_status == QProcess::ExitStatus::NormalExit &&
                 exit_code == 0) {
                 video->setProgress("100%");
             }
-            set_is_downloading(false);
-            this->start_download();
         });
+
+    QObject::connect(yt_dlp, &QProcess::finished, this, [this]() {
+        set_is_downloading(false);
+        start_download();
+    });
 
     yt_dlp->start();
 }

@@ -2,8 +2,8 @@
 
 #include <qnamespace.h>
 #include <qtmetamacros.h>
+#include <qtypes.h>
 
-#include <QAbstractItemModel>
 #include <QAbstractListModel>
 #include <QHash>
 #include <QList>
@@ -40,8 +40,14 @@ class VideoListModel : public QAbstractListModel {
 
     QHash<int, QByteArray> roleNames() const override;
 
+    Q_INVOKABLE void removeVideo(int row);
+
+    Q_INVOKABLE void removeAllVideos();
+
    public slots:  // NOLINT(readability-redundant-access-specifiers)
-                  // void addVideos(QList<ManagedVideoParts>);
+    void prependVideos(QList<ManagedVideoParts>);
+
+    void appendVideos(QList<ManagedVideoParts>);
 
    private:
     QList<ManagedVideo*> videos_;

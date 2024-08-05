@@ -5,6 +5,7 @@ add_executable("${PROJECT_NAME}_tests"
     tst_main.cpp
     tst_downloader.cpp
     tst_database.cpp
+    tst_video_list_model.cpp
 )
 target_link_libraries("${PROJECT_NAME}_tests"
     PRIVATE

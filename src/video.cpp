@@ -108,9 +108,8 @@ ManagedVideo::ManagedVideo(qint64 id, qint64 created_at, VideoInfo info,
 }
 
 ManagedVideo::ManagedVideo(ManagedVideoParts parts, QObject* parent)
-    : ManagedVideo(get<0>(parts), get<1>(parts), get<2>(parts), parent) {}
-
-ManagedVideo::~ManagedVideo() { emit this->requestCancelDownload(); }
+    : ManagedVideo(get<0>(parts), get<1>(parts), get<2>(std::move(parts)),
+                   parent) {}
 
 void ManagedVideo::setProgress(QString progress) {
     if (progress == progress_) return;

@@ -1,11 +1,15 @@
 #include "video_list_model.h"
 
+#include <qabstractitemmodel.h>
+#include <qobject.h>
+#include <qtmetamacros.h>
+
 #include <QByteArray>
 #include <QVariant>
 #include <QtAlgorithms>
 
+#include "database.h"
 #include "video.h"
-
 
 namespace yd_gui {
 VideoListModel::VideoListModel(QObject* parent) : QAbstractListModel(parent) {
@@ -96,4 +100,55 @@ QHash<int, QByteArray> VideoListModel::roleNames() const {
     };
     return kRoles;
 }
+
+Q_INVOKABLE void VideoListModel::removeVideo(int row) {
+    if (row < 0 || row >= videos_.size()) return;
+
+    beginRemoveRows(QModelIndex(), row, row);
+    auto* const video = videos_.takeAt(row);
+    endRemoveRows();
+
+    emit video->requestCancelDownload();
+
+    Database::get().removeVideo(video->id());
+
+    video->deleteLater();
+}
+
+Q_INVOKABLE void VideoListModel::removeAllVideos() {
+    beginRemoveRows(QModelIndex(), 0, videos_.size());
+    QList<ManagedVideo*> videos = videos_;
+    videos_.clear();
+    endRemoveRows();
+
+    Database::get().removeAllVideos();
+
+    for (auto* const video : videos) {
+        emit video->requestCancelDownload();
+        video->deleteLater();
+    }
+}
+
+void VideoListModel::prependVideos(QList<ManagedVideoParts> parts) {
+    while (!parts.empty()) {
+        beginInsertRows(QModelIndex(), 0, 0);
+        videos_.prepend(new ManagedVideo(parts.takeLast()));
+        endInsertRows();
+    }
+}
+
+void VideoListModel::appendVideos(QList<ManagedVideoParts> parts) {
+    QList<ManagedVideo*> videos;
+    videos.reserve(parts.size());
+
+    while (!parts.empty()) {
+        videos << new ManagedVideo(parts.takeFirst());
+    }
+
+    beginInsertRows(QModelIndex(), videos_.size(),
+                    videos_.size() + videos.size());
+    videos_.append(std::move(videos));
+    endInsertRows();
+}
+
 }  // namespace yd_gui

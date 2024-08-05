@@ -124,8 +124,6 @@ class ManagedVideo : public QObject {
 
     explicit ManagedVideo(ManagedVideoParts parts, QObject* parent = nullptr);
 
-    ~ManagedVideo() override;
-
     ManagedVideo(const ManagedVideo& other) = delete;
 
     ManagedVideo& operator=(const ManagedVideo& other) = delete;
