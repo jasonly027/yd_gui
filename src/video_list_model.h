@@ -11,6 +11,7 @@
 #include <QVariant>
 #include <QtQmlIntegration>
 
+#include "database.h"
 #include "video.h"
 
 namespace yd_gui {
@@ -29,7 +30,8 @@ class VideoListModel : public QAbstractListModel {
         kSelectedFormatRole,
     };
 
-    explicit VideoListModel(QObject* parent = nullptr);
+    explicit VideoListModel(Database& db = Database::get(),
+                            QObject* parent = nullptr);
 
     ~VideoListModel() override;
 
@@ -51,6 +53,7 @@ class VideoListModel : public QAbstractListModel {
 
    private:
     QList<ManagedVideo*> videos_;
+    Database& db_;
 };
 
 }  // namespace yd_gui
