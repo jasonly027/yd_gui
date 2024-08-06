@@ -17,7 +17,7 @@
                 - mark invalid when download source broken
                 - datetime of insert
         - pagination
-        - clear 
+        - clear
             - download history
             - temp json dir
     - GUI
