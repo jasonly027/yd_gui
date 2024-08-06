@@ -31,6 +31,7 @@ static QString get_test_name() {
 class DatabaseTest : public testing::Test {
    protected:
     DatabaseTest() {
+        EXPECT_TRUE(db_.valid());
         QObject::connect(&db_, &Database::errorPushed, [](const QString& data) {
             std::cerr << data.toStdString() << '\n';
         });

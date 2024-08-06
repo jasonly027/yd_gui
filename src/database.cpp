@@ -19,10 +19,12 @@ bool create_database(const QString& file_name, const QString& connection_name) {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connection_name);
     db.setDatabaseName(file_name);
 
-    bool ok = db.open();
-    if (!ok) qDebug() << "[History] Failed to open history";
+    if (!db.open()) {
+        qDebug() << "[History] Failed to open history";
+        return false;
+    }
 
-    return ok;
+    return true;
 }
 
 bool create_videos_table(QSqlDatabase& db);
@@ -30,31 +32,30 @@ bool create_videos_table(QSqlDatabase& db);
 bool create_formats_table(QSqlDatabase& db);
 
 bool create_tables(QSqlDatabase& db) {
-    bool ok = false;
-    db.transaction();
+    if (!db.transaction()) {
+        qDebug() << "[History] Failed to start transaction";
+        return false;
+    }
 
-    ok = create_videos_table(db);
-    if (!ok) {
+    if (!create_videos_table(db)) {
         qDebug() << "[History] Failed to create videos table";
         db.rollback();
-        return ok;
+        return false;
     }
 
-    ok = create_formats_table(db);
-    if (!ok) {
+    if (!create_formats_table(db)) {
         qDebug() << "[History] Failed to create formats table";
         db.rollback();
-        return ok;
+        return false;
     }
 
-    ok = db.commit();
-    if (!ok) {
+    if (!db.commit()) {
         qDebug() << "[History] Failed to create tables";
-        return ok;
+        return false;
     }
 
     qInfo() << "[History] Successfully setup history";
-    return ok;
+    return true;
 }
 
 bool create_videos_table(QSqlDatabase& db) {
@@ -92,14 +93,15 @@ bool create_formats_table(QSqlDatabase& db) {
 QSqlQuery create_select_first_chunk_videos(QSqlDatabase& db,
                                            qint64 chunk_size) {
     QSqlQuery videos_query(db);
-    videos_query.prepare(
-        "SELECT id, created_at, video_id, title, author,"
-        "    seconds, thumbnail, url, audio_available "
-        "FROM videos "
+    assert(
+        (videos_query.prepare("SELECT id, created_at, video_id, title, author,"
+                              "    seconds, thumbnail, url, audio_available "
+                              "FROM videos "
 
-        "ORDER BY created_at DESC, id DESC "
+                              "ORDER BY created_at DESC, id DESC "
 
-        "LIMIT :limit;");
+                              "LIMIT :limit;")) &&
+        "Failed to prepare query for selecting first chunk");
     videos_query.bindValue(":limit", chunk_size);
     videos_query.setForwardOnly(true);
 
@@ -111,17 +113,18 @@ QSqlQuery create_select_chunk_videos(QSqlDatabase& db, const qint64 last_id,
                                      const qint64 last_created_at,
                                      const qint64 chunk_size) {
     QSqlQuery videos_query(db);
-    videos_query.prepare(
-        "SELECT id, created_at, video_id, title, author,"
-        "    seconds, thumbnail, url, audio_available "
-        "FROM videos "
+    assert((videos_query.prepare(
+               "SELECT id, created_at, video_id, title, author,"
+               "    seconds, thumbnail, url, audio_available "
+               "FROM videos "
 
-        "WHERE (created_at < :last_created_at) "
-        "OR (created_at = :last_created_at AND id < :last_id) "
+               "WHERE (created_at < :last_created_at) "
+               "OR (created_at = :last_created_at AND id < :last_id) "
 
-        "ORDER BY created_at DESC, id DESC "
+               "ORDER BY created_at DESC, id DESC "
 
-        "LIMIT :limit;");
+               "LIMIT :limit;")) &&
+           "Failed to prepare query for selecting chunk");
     videos_query.bindValue(":last_id", last_id);
     videos_query.bindValue(":last_created_at", last_created_at);
     videos_query.bindValue(":limit", chunk_size);
@@ -133,13 +136,14 @@ QSqlQuery create_select_chunk_videos(QSqlDatabase& db, const qint64 last_id,
 // Selected by oldest to newest
 QSqlQuery create_select_formats(QSqlDatabase& db, const qint64 videos_id) {
     QSqlQuery formats_query(db);
-    formats_query.prepare(
-        "SELECT format_id, container, width, height, fps "
-        "FROM formats "
+    assert((formats_query.prepare(
+               "SELECT format_id, container, width, height, fps "
+               "FROM formats "
 
-        "WHERE videos_id = :videos_id "
+               "WHERE videos_id = :videos_id "
 
-        "ORDER BY id ASC;");
+               "ORDER BY id ASC;")) &&
+           "Failed to prepare query for selecting formats");
     formats_query.bindValue(":videos_id", videos_id);
     formats_query.setForwardOnly(true);
 
@@ -248,18 +252,19 @@ QList<VideoFormat> extract_formats(QSqlQuery formats_query, Database& db) {
 QSqlQuery create_insert_video(QSqlDatabase& db, const VideoInfo& info,
                               const qint64 created_at) {
     QSqlQuery insert_video(db);
-    insert_video.prepare(
-        "INSERT INTO videos"
-        "("
-        "    created_at, video_id, title, author, seconds,"
-        "    thumbnail, url, audio_available"
-        ")"
+    assert((insert_video.prepare(
+               "INSERT INTO videos"
+               "("
+               "    created_at, video_id, title, author, seconds,"
+               "    thumbnail, url, audio_available"
+               ")"
 
-        "VALUES"
-        "("
-        "    :created_at, :video_id, :title, :author, :seconds,"
-        "    :thumbnail, :url, :audio_available"
-        ");");
+               "VALUES"
+               "("
+               "    :created_at, :video_id, :title, :author, :seconds,"
+               "    :thumbnail, :url, :audio_available"
+               ");")) &&
+           "Failed to prepare query for inserting video");
 
     insert_video.bindValue(":created_at", created_at);
     insert_video.bindValue(":video_id", info.video_id());
@@ -276,16 +281,17 @@ QSqlQuery create_insert_video(QSqlDatabase& db, const VideoInfo& info,
 QSqlQuery create_insert_format(QSqlDatabase& db, const VideoFormat& format,
                                const qint64 videos_id) {
     QSqlQuery insert_format(db);
-    insert_format.prepare(
-        "INSERT INTO formats"
-        "("
-        "    format_id, container, width, height, fps, videos_id"
-        ")"
+    assert((insert_format.prepare(
+               "INSERT INTO formats"
+               "("
+               "    format_id, container, width, height, fps, videos_id"
+               ")"
 
-        "VALUES"
-        "("
-        "    :format_id, :container, :width, :height, :fps, :videos_id"
-        ");");
+               "VALUES"
+               "("
+               "    :format_id, :container, :width, :height, :fps, :videos_id"
+               ");")) &&
+           "Failed to prepare query for inserting format");
     insert_format.bindValue(":format_id", format.format_id());
     insert_format.bindValue(":container", format.container());
     insert_format.bindValue(":width", format.width());
@@ -354,7 +360,10 @@ void Database::setValid(const bool valid) {
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 void Database::addVideo(const VideoInfo& info) {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
-    db.transaction();
+    if (!db.transaction()) {
+        log_error("Failed to add video (start add)");
+        return;
+    }
 
     const qint64 created_at = QDateTime::currentSecsSinceEpoch();
 
@@ -400,9 +409,9 @@ void Database::addVideo(const VideoInfo& info) {
 void Database::removeVideo(const qint64 id) {
     const QSqlDatabase db = QSqlDatabase::database(connection_name_);
     QSqlQuery remove_video_query(db);
-    remove_video_query.prepare(
-        "DELETE FROM videos "
-        "WHERE id = :id;");
+    assert((remove_video_query.prepare("DELETE FROM videos "
+                                       "WHERE id = :id;")) &&
+           "Failed to prepare query for removing video");
     remove_video_query.bindValue(":id", id);
 
     if (!remove_video_query.exec()) log_error("Failed to remove video");
