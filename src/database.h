@@ -49,12 +49,22 @@ class Database : public QObject {
     void removeAllVideos();
 
    private:
-    friend QList<ManagedVideoParts> extract_videos(QSqlQuery videos_query,
-                                                   QSqlDatabase& db,
-                                                   Database& this_db);
+    bool create_tables();
 
-    friend QList<VideoFormat> extract_formats(QSqlQuery formats_query,
-                                              Database& db);
+    QList<ManagedVideoParts> extract_videos(QSqlQuery videos_query);
+
+    QList<VideoFormat> extract_formats(QSqlQuery formats_query);
+
+    QSqlQuery create_select_first_chunk_videos(qint64 chunk_size);
+
+    QSqlQuery create_select_chunk_videos(qint64 last_id, qint64 last_created_at,
+                                         qint64 chunk_size);
+
+    QSqlQuery create_insert_video(const VideoInfo& info, qint64 created_at);
+
+    QSqlQuery create_insert_format(const VideoFormat& format, qint64 videos_id);
+
+    QSqlQuery create_select_formats(qint64 videos_id);
 
     void log_error(QString message);
 
@@ -64,7 +74,7 @@ class Database : public QObject {
                       QString connection_name = kDatabaseFileName,
                       QObject* parent = nullptr);
 
-    QList<ManagedVideoParts> fetch_chunk_impl(QSqlDatabase db, QSqlQuery query);
+    QList<ManagedVideoParts> fetch_chunk_impl(QSqlQuery query);
 
     bool valid_;
     const QString connection_name_;

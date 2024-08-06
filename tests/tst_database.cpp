@@ -11,7 +11,6 @@
 #include <QSqlRecord>
 #include <QString>
 #include <QStringBuilder>
-#include <Qstring>
 #include <QtTypes>
 #include <iostream>
 #include <limits>
