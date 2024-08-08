@@ -13,7 +13,6 @@
 #include "video.h"
 
 namespace yd_gui {
-using std::optional;
 
 class Downloader : public QObject {
     Q_OBJECT
@@ -29,7 +28,7 @@ class Downloader : public QObject {
    public:
     explicit Downloader(QObject* parent = nullptr);
 
-    static optional<VideoInfo> parseRawInfo(const QString& raw_info);
+    static std::optional<VideoInfo> parseRawInfo(const QString& raw_info);
 
     Q_INVOKABLE void fetch_info(const QString& url);
 

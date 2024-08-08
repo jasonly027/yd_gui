@@ -1,7 +1,7 @@
 #include "downloader.h"
 
-#include <qobject.h>
-#include <qprocess.h>
+#include <qrunnable.h>
+#include <qthreadpool.h>
 #include <qtmetamacros.h>
 
 #include <QDebug>
@@ -13,22 +13,22 @@
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <QStringBuilder>
+#include <QtConcurrent/QtConcurrent>
 #include <QtQmlIntegration>
 #include <cassert>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 
 #include "video.h"
 
 namespace yd_gui {
 
-using nlohmann::basic_json;
-using nlohmann::json;
-using std::nullopt;
-using std::string;
+using nlohmann::basic_json, nlohmann::json, std::nullopt, std::string,
+    std::tuple, std::optional;
 
 Downloader::Downloader(QObject* parent) : QObject(parent) {}
 
@@ -44,34 +44,13 @@ static T from_field(const char field[], const json& json,
     return T{};
 }
 
-// Deserialize from JSON to VideoInfo
-optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
-    const json info = json::parse(raw_info.toStdString(), nullptr, false);
-    // Check if invalid JSON
-    if (info.is_discarded()) return nullopt;
-
-    auto video_id = QString::fromStdString(
-        from_field<string>("id", info, &basic_json<>::is_string));
-
-    auto title = QString::fromStdString(
-        from_field<string>("title", info, &basic_json<>::is_string));
-
-    auto author = QString::fromStdString(
-        from_field<string>("channel", info, &basic_json<>::is_string));
-
-    auto seconds = from_field<quint32>("duration", info,
-                                       &basic_json<>::is_number_unsigned);
-
-    auto thumbnail = QString::fromStdString(
-        from_field<string>("thumbnail", info, &basic_json<>::is_string));
-
-    auto url = QString::fromStdString(
-        from_field<string>("original_url", info, &basic_json<>::is_string));
+// Returns a tuple of audio_available and list of VideoFormats
+static tuple<bool, QList<VideoFormat>> parse_formats(const basic_json<>& info) {
+    const auto formats_it = info.find("formats");
 
     bool audio_available = false;
     QList<VideoFormat> formats;
 
-    const auto formats_it = info.find("formats");
     if (formats_it != info.cend() && formats_it->is_array()) {
         for (const auto& format_it : *formats_it) {
             // Check if this video as a whole (i.e., not necessarily this
@@ -111,6 +90,35 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
         }
     }
 
+    return {audio_available, std::move(formats)};
+}
+
+// Deserialize from JSON to VideoInfo
+optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
+    const json info = json::parse(raw_info.toStdString(), nullptr, false);
+    // Check if invalid JSON
+    if (info.is_discarded()) return nullopt;
+
+    auto video_id = QString::fromStdString(
+        from_field<string>("id", info, &basic_json<>::is_string));
+
+    auto title = QString::fromStdString(
+        from_field<string>("title", info, &basic_json<>::is_string));
+
+    auto author = QString::fromStdString(
+        from_field<string>("channel", info, &basic_json<>::is_string));
+
+    auto seconds = from_field<quint32>("duration", info,
+                                       &basic_json<>::is_number_unsigned);
+
+    auto thumbnail = QString::fromStdString(
+        from_field<string>("thumbnail", info, &basic_json<>::is_string));
+
+    auto url = QString::fromStdString(
+        from_field<string>("original_url", info, &basic_json<>::is_string));
+
+    auto [audio_available, formats] = parse_formats(info);
+
     // There's nothing we can download
     if (formats.empty() && !audio_available) return nullopt;
 
@@ -130,13 +138,16 @@ void Downloader::fetch_info(const QString& url) {
     QProcess* yt_dlp = create_fetch_process(url);
 
     QObject::connect(yt_dlp, &QProcess::finished, this, [=, this] {
-        const QString raw_info = yt_dlp->readAllStandardOutput();
-        optional<VideoInfo> info = parseRawInfo(raw_info);
+        QTextStream stream(yt_dlp->readAllStandardOutput());
 
-        if (!info.has_value()) {
-            emit this->fetchInfoBadParse();
-        } else {
-            emit this->infoPushed(std::move(info.value()));
+        while (!stream.atEnd()) {
+            optional<VideoInfo> info = parseRawInfo(stream.readLine());
+
+            if (!info.has_value()) {
+                emit this->fetchInfoBadParse();
+            } else {
+                emit this->infoPushed(std::move(info.value()));
+            }
         }
 
         this->set_is_fetching(false);

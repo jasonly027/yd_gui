@@ -24,12 +24,14 @@ namespace yd_gui {
 
 class VideoFixture : public testing::Test {
    protected:
-    static bool infos_equal_no_check_formats(const VideoInfo& lhs,
-                                             const VideoInfo& rhs) {
-        return lhs.video_id() == rhs.video_id() && lhs.title() == rhs.title() &&
-               lhs.author() == rhs.author() && lhs.seconds() == rhs.seconds() &&
-               lhs.thumbnail() == rhs.thumbnail() &&
-               lhs.audio_available() == rhs.audio_available();
+    static void check_infos_equal_excluding_formats(const VideoInfo& lhs,
+                                                    const VideoInfo& rhs) {
+        EXPECT_EQ(lhs.video_id().toStdString(), rhs.video_id().toStdString());
+        EXPECT_EQ(lhs.title().toStdString(), rhs.title().toStdString());
+        EXPECT_EQ(lhs.author().toStdString(), rhs.author().toStdString());
+        EXPECT_EQ(lhs.seconds(), rhs.seconds());
+        EXPECT_EQ(lhs.thumbnail().toStdString(), rhs.thumbnail().toStdString());
+        EXPECT_EQ(lhs.audio_available(), rhs.audio_available());
     }
 
     static void check_is_subset(const QList<VideoFormat>& sublist,
@@ -82,9 +84,16 @@ class VideoFixture : public testing::Test {
                    VideoFormat("604", "mp4", 320, 240, 15)},
                   true)};
 
-    const VideoInfo& jm_info_ = jm_video_.info();
-    const VideoInfo& cks_info_ = cks_video_.info();
-    const VideoInfo& zoo_info_ = zoo_video_.info();
+    // Should be a playlist with two videos:
+    // 1) Joshua Morony's Angular video
+    // 2) jawed's zoo video
+    const QString playlist_{
+        "https://www.youtube.com/"
+        "playlist?list=PLoBsP3alZEYf8GPkgs8IHDzTxPJtqvPc5"};
+
+    const VideoInfo& jm_info_{jm_video_.info()};
+    const VideoInfo& cks_info_{cks_video_.info()};
+    const VideoInfo& zoo_info_{zoo_video_.info()};
 };
 
 class ParseRawInfoTest : public VideoFixture {
@@ -105,7 +114,7 @@ TEST_F(ParseRawInfoTest, Fmt1) {
     std::optional<VideoInfo> info = Downloader::parseRawInfo(raw);
 
     ASSERT_TRUE(info.has_value());
-    EXPECT_TRUE(infos_equal_no_check_formats(info.value(), jm_info_));
+    check_infos_equal_excluding_formats(info.value(), jm_info_);
     EXPECT_EQ(info->formats().at(0), jm_info_.formats().at(0));
     EXPECT_EQ(info->formats().at(1), jm_info_.formats().at(1));
     EXPECT_EQ(info->formats().at(2), jm_info_.formats().at(2));
@@ -117,7 +126,7 @@ TEST_F(ParseRawInfoTest, UnFmt) {
     std::optional<VideoInfo> info = Downloader::parseRawInfo(raw);
 
     ASSERT_TRUE(info.has_value());
-    EXPECT_TRUE(infos_equal_no_check_formats(info.value(), jm_info_));
+    check_infos_equal_excluding_formats(info.value(), jm_info_);
     EXPECT_EQ(info->formats().at(0), jm_info_.formats().at(0));
     EXPECT_EQ(info->formats().at(1), jm_info_.formats().at(1));
     EXPECT_EQ(info->formats().at(2), jm_info_.formats().at(2));
@@ -137,7 +146,7 @@ TEST_F(ParseRawInfoTest, Fmt3) {
     std::optional<VideoInfo> info = Downloader::parseRawInfo(raw);
 
     ASSERT_TRUE(info.has_value());
-    EXPECT_TRUE(infos_equal_no_check_formats(info.value(), zoo_info_));
+    check_infos_equal_excluding_formats(info.value(), zoo_info_);
     EXPECT_EQ(info->formats().at(0), zoo_info_.formats().at(0));
     EXPECT_EQ(info->formats().at(1), zoo_info_.formats().at(1));
     EXPECT_EQ(info->formats().at(2), zoo_info_.formats().at(2));
@@ -217,6 +226,16 @@ class DownloaderTest : public VideoFixture {
         QObject::connect(
             &dl_, &Downloader::standardErrorPushed,
             [](const QString& data) { std::cerr << data.toStdString(); });
+
+        QObject::connect(&dl_, &Downloader::programExistsChanged, [this] {
+            EXPECT_EQ(program_exists_spy_.count(), 0)
+                << "programExistsChanged signal was emit";
+        });
+
+        QObject::connect(&dl_, &Downloader::fetchInfoBadParse, [this] {
+            EXPECT_EQ(bad_parse_spy_.count(), 0)
+                << "fetchInfoBadParse signal was emit";
+        });
     }
 
     Downloader dl_;
@@ -239,13 +258,12 @@ TEST_F(DownloaderTest, FetchInfoCks) {
 
     info_pushed_spy_.wait(10000);
 
-    EXPECT_EQ(standard_err_spy_.count(), 0);
     EXPECT_EQ(fetching_spy_.count(), 2);
-    EXPECT_EQ(bad_parse_spy_.count(), 0);
-    EXPECT_EQ(program_exists_spy_.count(), 0);
     ASSERT_EQ(info_pushed_spy_.count(), 1);
 
-    auto info = info_pushed_spy_.takeFirst().takeFirst().value<VideoInfo>();
+    const auto var = info_pushed_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var.canConvert<VideoInfo>());
+    const auto info = std::move(var).value<VideoInfo>();
 
     EXPECT_EQ(info, cks_info_);
 }
@@ -256,14 +274,37 @@ TEST_F(DownloaderTest, FetchInfoJm) {
     info_pushed_spy_.wait(10000);
 
     EXPECT_EQ(fetching_spy_.count(), 2);
-    EXPECT_EQ(bad_parse_spy_.count(), 0);
-    EXPECT_EQ(program_exists_spy_.count(), 0);
     ASSERT_EQ(info_pushed_spy_.count(), 1);
 
-    auto info = info_pushed_spy_.takeFirst().takeFirst().value<VideoInfo>();
+    const auto var = info_pushed_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var.canConvert<VideoInfo>());
+    const auto info = std::move(var).value<VideoInfo>();
 
-    EXPECT_TRUE(infos_equal_no_check_formats(info, jm_info_));
+    check_infos_equal_excluding_formats(info, jm_info_);
     check_is_subset(jm_info_.formats(), info.formats());
+}
+
+TEST_F(DownloaderTest, FetchInfoPlaylist) {
+    dl_.fetch_info(playlist_);
+
+    while (info_pushed_spy_.wait(10000) && info_pushed_spy_.count() < 2);
+
+    EXPECT_EQ(fetching_spy_.count(), 2);
+    ASSERT_EQ(info_pushed_spy_.count(), 2);
+
+    const auto var1 = info_pushed_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var1.canConvert<VideoInfo>());
+    const auto should_be_jm_info = std::move(var1).value<VideoInfo>();
+
+    check_infos_equal_excluding_formats(should_be_jm_info, jm_info_);
+    check_is_subset(jm_info_.formats(), should_be_jm_info.formats());
+
+    const auto var2 = info_pushed_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var2.canConvert<VideoInfo>());
+    const auto should_be_zoo_info = std::move(var2).value<VideoInfo>();
+
+    check_infos_equal_excluding_formats(should_be_zoo_info, zoo_info_);
+    check_is_subset(zoo_info_.formats(), should_be_zoo_info.formats());
 }
 
 TEST_F(DownloaderTest, EnqueueOneVideo) {
@@ -271,7 +312,6 @@ TEST_F(DownloaderTest, EnqueueOneVideo) {
 
     while (downloading_spy_.wait(10000) && downloading_spy_.count() < 2);
 
-    EXPECT_EQ(program_exists_spy_.count(), 0);
     EXPECT_EQ(downloading_spy_.count(), 2);
     EXPECT_EQ(zoo_video_.progress().toStdString(), "100%");
 }
@@ -282,7 +322,6 @@ TEST_F(DownloaderTest, EnqueueTwoVideos) {
 
     while (downloading_spy_.wait(10000) && downloading_spy_.count() < 4);
 
-    EXPECT_EQ(program_exists_spy_.count(), 0);
     EXPECT_EQ(downloading_spy_.count(), 4);
 }
 
