@@ -1,6 +1,9 @@
 #pragma once
 
+#include <qsqldatabase.h>
+#include <qsqlquery.h>
 #include <qtmetamacros.h>
+#include <qtypes.h>
 
 #include <QList>
 #include <QObject>
@@ -60,11 +63,17 @@ class Database : public QObject {
     QSqlQuery create_select_chunk_videos(qint64 last_id, qint64 last_created_at,
                                          qint64 chunk_size);
 
-    QSqlQuery create_insert_video(const VideoInfo& info, qint64 created_at);
-
-    QSqlQuery create_insert_format(const VideoFormat& format, qint64 videos_id);
-
     QSqlQuery create_select_formats(qint64 videos_id);
+
+    std::optional<qint64> fetch_last_insert_id();
+
+    bool insert_video(const VideoInfo& info, qint64 created_at);
+
+    bool insert_format(const VideoFormat& format, qint64 videos_id);
+
+    QSqlQuery make_query();
+
+    QSqlDatabase make_connection();
 
     void log_error(QString message);
 

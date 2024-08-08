@@ -1,6 +1,8 @@
 #include <database.h>
 #include <downloader.h>
 #include <gtest/gtest.h>
+#include <qlist.h>
+#include <qsignalspy.h>
 
 #include <QDateTime>
 #include <QObject>
@@ -31,9 +33,12 @@ class DatabaseTest : public testing::Test {
    protected:
     DatabaseTest() {
         EXPECT_TRUE(db_.valid());
-        QObject::connect(&db_, &Database::errorPushed, [](const QString& data) {
-            std::cerr << data.toStdString() << '\n';
-        });
+        QObject::connect(&db_, &Database::errorPushed,
+                         [this](const QString& data) {
+                             std::cerr << data.toStdString() << '\n';
+                             EXPECT_EQ(error_spy_.count(), 0)
+                                 << "errorPushed signal was emit";
+                         });
     };
 
     QSqlQuery create_query() {
@@ -233,8 +238,8 @@ TEST_F(DatabaseTest, FetchFirstChunkTwoVideosInDb) {
     const auto parts = db_.fetch_first_chunk();
     EXPECT_EQ(parts.size(), 2) << "Didn't fetch expected number of parts";
 
-    auto [id1, created_at1, info1] = parts[0];
-    auto [id2, created_at2, info2] = parts[1];
+    const auto [id1, created_at1, info1] = parts[0];
+    const auto [id2, created_at2, info2] = parts[1];
 
     EXPECT_EQ(info1, info1_) << "Unexpected info";
     EXPECT_EQ(info2, info2_) << "Unexpected info";
@@ -259,7 +264,7 @@ TEST_F(DatabaseTest, FetchFirstChunkMoreVideosinDbThanChunkSize) {
 }
 
 TEST_F(DatabaseTest, FetchChunkNoVideosInDb) {
-    auto parts = db_.fetch_chunk(0, 0);
+    const auto parts = db_.fetch_chunk(0, 0);
 
     EXPECT_TRUE(parts.empty()) << "Fetch shouldn't have returned any parts";
 }
@@ -272,8 +277,8 @@ TEST_F(DatabaseTest, FetchChunkTwoVideosInDbGetBoth) {
     const auto parts = db_.fetch_chunk(kMax, kMax);
     EXPECT_EQ(parts.size(), 2) << "Did not fetch expected number of videos";
 
-    auto [id1, created_at1, info1] = parts[0];
-    auto [id2, created_at2, info2] = parts[1];
+    const auto [id1, created_at1, info1] = parts[0];
+    const auto [id2, created_at2, info2] = parts[1];
 
     EXPECT_EQ(info1, info1_) << "Unexpected info";
     EXPECT_EQ(info2, info2_) << "Unexpected info";
@@ -330,11 +335,9 @@ TEST_F(DatabaseTest, SetValidToFalse) {
 }
 
 TEST_F(DatabaseTest, AddOneVideo) {
-    auto before_add = QDateTime::currentSecsSinceEpoch();
+    const auto before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
-    auto after_add = QDateTime::currentSecsSinceEpoch();
-
-    EXPECT_EQ(error_spy_.count(), 0);
+    const auto after_add = QDateTime::currentSecsSinceEpoch();
 
     EXPECT_EQ(get_num_rows_in_videos(), 1);
 
@@ -348,27 +351,27 @@ TEST_F(DatabaseTest, AddOneVideo) {
     // Check pushed video
     EXPECT_EQ(video_spy_.count(), 1);
 
-    auto components = video_spy_.takeFirst()
-                          .takeFirst()
-                          .value<QList<ManagedVideoParts>>()
-                          .takeFirst();
-    check_video_pushed(components, info1_, 1, before_add, after_add);
+    const auto var = video_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var.canConvert<QList<ManagedVideoParts>>());
+    const auto parts_list = var.value<QList<ManagedVideoParts>>();
+
+    EXPECT_EQ(parts_list.size(), 1);
+
+    check_video_pushed(parts_list.first(), info1_, 1, before_add, after_add);
 }
 
 TEST_F(DatabaseTest, AddTwoVideos) {
-    auto before_add1 = QDateTime::currentSecsSinceEpoch();
+    const auto before_add1 = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
-    auto after_add1 = QDateTime::currentSecsSinceEpoch();
+    const auto after_add1 = QDateTime::currentSecsSinceEpoch();
 
     EXPECT_EQ(get_num_rows_in_videos(), 1);
 
-    auto before_add2 = QDateTime::currentSecsSinceEpoch();
+    const auto before_add2 = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
-    auto after_add2 = QDateTime::currentSecsSinceEpoch();
+    const auto after_add2 = QDateTime::currentSecsSinceEpoch();
 
     EXPECT_EQ(get_num_rows_in_videos(), 2);
-
-    EXPECT_EQ(error_spy_.count(), 0);
 
     // Check info in db
     ASSERT_TRUE(query_.exec(QString("SELECT") % kVideosColumns %
@@ -382,23 +385,25 @@ TEST_F(DatabaseTest, AddTwoVideos) {
     // Check pushed videos
     EXPECT_EQ(video_spy_.count(), 2);
 
-    auto components1 = video_spy_.takeFirst()
-                           .takeFirst()
-                           .value<QList<ManagedVideoParts>>()
-                           .takeFirst();
-    check_video_pushed(components1, info1_, 1, before_add1, after_add1);
+    const auto var1 = video_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var1.canConvert<QList<ManagedVideoParts>>());
+    const auto parts_list1 = var1.value<QList<ManagedVideoParts>>();
 
-    auto components2 = video_spy_.takeFirst()
-                           .takeFirst()
-                           .value<QList<ManagedVideoParts>>()
-                           .takeFirst();
-    check_video_pushed(components2, info2_, 2, before_add1, after_add1);
+    EXPECT_EQ(parts_list1.size(), 1);
+
+    check_video_pushed(parts_list1.first(), info1_, 1, before_add1, after_add1);
+
+    const auto var2 = video_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var2.canConvert<QList<ManagedVideoParts>>());
+    const auto parts_list2 = var2.value<QList<ManagedVideoParts>>();
+
+    EXPECT_EQ(parts_list2.size(), 1);
+
+    check_video_pushed(parts_list2.first(), info2_, 2, before_add1, after_add1);
 }
 
 TEST_F(DatabaseTest, RemoveOnEmptyDb) {
-    db_.removeVideo(1);
-
-    EXPECT_EQ(error_spy_.count(), 0);
+    db_.removeVideo(1);  // Checked by error signal
 }
 
 TEST_F(DatabaseTest, RemoveOnNonExistingId) {
@@ -408,14 +413,10 @@ TEST_F(DatabaseTest, RemoveOnNonExistingId) {
 
     db_.removeVideo(3);
     EXPECT_EQ(get_num_rows_in_videos(), 2);
-
-    EXPECT_EQ(error_spy_.count(), 0);
 }
 
 TEST_F(DatabaseTest, RemoveAllOnEmptyDb) {
-    db_.removeAllVideos();
-
-    EXPECT_EQ(error_spy_.count(), 0);
+    db_.removeAllVideos();  // Checked by error signal
 }
 
 TEST_F(DatabaseTest, RemoveOneVideo) {
@@ -424,15 +425,13 @@ TEST_F(DatabaseTest, RemoveOneVideo) {
 
     db_.removeVideo(1);
     EXPECT_EQ(get_num_rows_in_videos(), 0);
-
-    EXPECT_EQ(error_spy_.count(), 0);
 }
 
 TEST_F(DatabaseTest, RemoveFirstOfTwoVideos) {
     db_.addVideo(info1_);
-    auto before_add = QDateTime::currentSecsSinceEpoch();
+    const auto before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
-    auto after_add = QDateTime::currentSecsSinceEpoch();
+    const auto after_add = QDateTime::currentSecsSinceEpoch();
     EXPECT_EQ(get_num_rows_in_videos(), 2);
 
     db_.removeVideo(1);
@@ -445,14 +444,12 @@ TEST_F(DatabaseTest, RemoveFirstOfTwoVideos) {
     EXPECT_TRUE(query_.next());
 
     check_add(query_.record(), info2_, 2, before_add, after_add);
-
-    EXPECT_EQ(error_spy_.count(), 0);
 }
 
 TEST_F(DatabaseTest, RemoveSecondOfTwoVideos) {
-    auto before_add = QDateTime::currentSecsSinceEpoch();
+    const auto before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
-    auto after_add = QDateTime::currentSecsSinceEpoch();
+    const auto after_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
     EXPECT_EQ(get_num_rows_in_videos(), 2);
 
@@ -466,8 +463,6 @@ TEST_F(DatabaseTest, RemoveSecondOfTwoVideos) {
     EXPECT_TRUE(query_.next());
 
     check_add(query_.record(), info1_, 1, before_add, after_add);
-
-    EXPECT_EQ(error_spy_.count(), 0);
 }
 
 TEST_F(DatabaseTest, RemoveAllOnTwoVideos) {
@@ -478,8 +473,6 @@ TEST_F(DatabaseTest, RemoveAllOnTwoVideos) {
     db_.removeAllVideos();
 
     EXPECT_EQ(get_num_rows_in_videos(), 0);
-
-    EXPECT_EQ(error_spy_.count(), 0);
 }
 
 }  // namespace yd_gui

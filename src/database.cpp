@@ -1,6 +1,8 @@
 #include "database.h"
 
 #include <qsqldatabase.h>
+#include <qsqlquery.h>
+#include <qtypes.h>
 
 #include <QDateTime>
 #include <QObject>
@@ -9,13 +11,14 @@
 #include <QStringBuilder>
 #include <QtTypes>
 #include <algorithm>
+#include <optional>
 #include <tuple>
 
 #include "video.h"
 
 namespace yd_gui {
 
-using std::make_tuple, std::tuple;
+using std::make_tuple, std::tuple, std::nullopt, std::optional;
 
 Database::~Database() { QSqlDatabase::removeDatabase(connection_name_); }
 
@@ -76,37 +79,27 @@ void Database::addVideo(const VideoInfo& info) {
 
     const qint64 created_at = QDateTime::currentSecsSinceEpoch();
 
-    QSqlQuery insert_video = create_insert_video(info, created_at);
-    if (!insert_video.exec()) {
-        log_error("Failed to add video (initial insert)");
+    if (!insert_video(info, created_at)) {
         db.rollback();
         return;
     }
 
-    QSqlQuery last_id_query(db);
-    qint64 videos_id{};
-    bool ok = false;
-    if (last_id_query.exec("SELECT last_insert_rowid();") &&
-        last_id_query.next()) {
-        videos_id = last_id_query.value(0).toLongLong(&ok);
-    }
-    if (!ok) {
-        log_error("Failed to add video (id retrieval)");
+    optional<qint64> opt_videos_id = fetch_last_insert_id();
+    if (!opt_videos_id.has_value()) {
         db.rollback();
         return;
     }
+    qint64 videos_id = opt_videos_id.value();
 
     for (const auto& format : info.formats()) {
-        QSqlQuery insert_format = create_insert_format(format, videos_id);
-        if (!insert_format.exec()) {
-            log_error("Failed to add video (format insert)");
+        if (!insert_format(format, videos_id)) {
             db.rollback();
             return;
         }
     }
 
     if (!db.commit()) {
-        log_error("Failed to add video (commit)");
+        log_error("Failed to commit video");
         db.rollback();
         return;
     }
@@ -115,29 +108,53 @@ void Database::addVideo(const VideoInfo& info) {
 }
 
 void Database::removeVideo(const qint64 id) {
-    const QSqlDatabase db = QSqlDatabase::database(connection_name_);
-    QSqlQuery remove_video_query(db);
-    if (!remove_video_query.prepare("DELETE FROM videos "
-                                    "WHERE id = :id;")) {
+    QSqlQuery query = make_query();
+    if (!query.prepare("DELETE FROM videos "
+                       "WHERE id = :id;")) {
         log_error("Failed to prepare query for video removal");
     }
-    remove_video_query.bindValue(":id", id);
+    query.bindValue(":id", id);
 
-    if (!remove_video_query.exec()) log_error("Failed to remove video");
+    if (!query.exec()) log_error("Failed to remove video");
 }
 
 void Database::removeAllVideos() {
-    const QSqlDatabase db = QSqlDatabase::database(connection_name_);
-    QSqlQuery remove_all_query(db);
-    if (!remove_all_query.exec("DELETE FROM videos"))
-        log_error("Failed to clear");
+    if (!make_query().exec("DELETE FROM videos")) log_error("Failed to clear");
 }
 
-bool create_videos_table(QSqlDatabase& db);
-bool create_formats_table(QSqlDatabase& db);
+static bool create_videos_table(const QSqlDatabase& db) {
+    QSqlQuery create_videos(db);
+    return create_videos.exec(
+        "CREATE TABLE IF NOT EXISTS videos ("
+        "    id                 INTEGER     PRIMARY KEY AUTOINCREMENT,"
+        "    created_at         INTEGER     NOT NULL,"
+        "    video_id           TEXT        NOT NULL,"
+        "    title              TEXT        NOT NULL,"
+        "    author             TEXT        NOT NULL,"
+        "    seconds            INTEGER     NOT NULL,"
+        "    thumbnail          TEXT        NOT NULL,"
+        "    url                TEXT        NOT NULL,"
+        "    audio_available    BOOLEAN     NOT NULL"
+        ");");
+}
+
+static bool create_formats_table(const QSqlDatabase& db) {
+    QSqlQuery create_formats(db);
+    return create_formats.exec(
+        "CREATE TABLE IF NOT EXISTS formats ("
+        "    id             INTEGER     PRIMARY KEY AUTOINCREMENT,"
+        "    format_id      TEXT        NOT NULL,"
+        "    container      TEXT        NOT NULL,"
+        "    width          INTEGER     NOT NULL,"
+        "    height         INTEGER     NOT NULL,"
+        "    fps            REAL        NOT NULL,"
+        "    videos_id      INTEGER     NOT NULL,"
+        "    FOREIGN KEY (videos_id) REFERENCES videos (id) ON DELETE CASCADE"
+        ");");
+}
 
 bool Database::create_tables() {
-    QSqlDatabase db = QSqlDatabase::database(connection_name_);
+    QSqlDatabase db = make_connection();
 
     if (!db.transaction()) {
         log_error("Failed to start creating tables");
@@ -163,37 +180,6 @@ bool Database::create_tables() {
 
     qInfo() << "[History] Successfully setup history";
     return true;
-}
-
-bool create_videos_table(QSqlDatabase& db) {
-    QSqlQuery create_videos(db);
-    return create_videos.exec(
-        "CREATE TABLE IF NOT EXISTS videos ("
-        "    id                 INTEGER     PRIMARY KEY AUTOINCREMENT,"
-        "    created_at         INTEGER     NOT NULL,"
-        "    video_id           TEXT        NOT NULL,"
-        "    title              TEXT        NOT NULL,"
-        "    author             TEXT        NOT NULL,"
-        "    seconds            INTEGER     NOT NULL,"
-        "    thumbnail          TEXT        NOT NULL,"
-        "    url                TEXT        NOT NULL,"
-        "    audio_available    BOOLEAN     NOT NULL"
-        ");");
-}
-
-bool create_formats_table(QSqlDatabase& db) {
-    QSqlQuery create_formats(db);
-    return create_formats.exec(
-        "CREATE TABLE IF NOT EXISTS formats ("
-        "    id             INTEGER     PRIMARY KEY AUTOINCREMENT,"
-        "    format_id      TEXT        NOT NULL,"
-        "    container      TEXT        NOT NULL,"
-        "    width          INTEGER     NOT NULL,"
-        "    height         INTEGER     NOT NULL,"
-        "    fps            REAL        NOT NULL,"
-        "    videos_id      INTEGER     NOT NULL,"
-        "    FOREIGN KEY (videos_id) REFERENCES videos (id) ON DELETE CASCADE"
-        ");");
 }
 
 QList<ManagedVideoParts> Database::extract_videos(QSqlQuery videos_query) {
@@ -294,90 +280,110 @@ QList<VideoFormat> Database::extract_formats(QSqlQuery formats_query) {
 
 // Selected from newest to oldest
 QSqlQuery Database::create_select_first_chunk_videos(qint64 chunk_size) {
-    const QSqlDatabase db = QSqlDatabase::database(connection_name_);
+    QSqlQuery query = make_query();
+    if (!query.prepare("SELECT id, created_at, video_id, title, author,"
+                       "    seconds, thumbnail, url, audio_available "
+                       "FROM videos "
 
-    QSqlQuery videos_query(db);
-    if (!videos_query.prepare("SELECT id, created_at, video_id, title, author,"
-                              "    seconds, thumbnail, url, audio_available "
-                              "FROM videos "
+                       "ORDER BY created_at DESC, id DESC "
 
-                              "ORDER BY created_at DESC, id DESC "
-
-                              "LIMIT :limit;")) {
+                       "LIMIT :limit;")) {
         log_error("Failed to prepare query for select first chunk");
     }
+    query.bindValue(":limit", chunk_size);
+    query.setForwardOnly(true);
 
-    videos_query.bindValue(":limit", chunk_size);
-    videos_query.setForwardOnly(true);
-
-    return videos_query;
+    return query;
 }
 
 // Selected from newest to oldest
 QSqlQuery Database::create_select_chunk_videos(const qint64 last_id,
                                                const qint64 last_created_at,
                                                const qint64 chunk_size) {
-    const QSqlDatabase db = QSqlDatabase::database(connection_name_);
+    QSqlQuery query = make_query();
+    if (!query.prepare("SELECT id, created_at, video_id, title, author,"
+                       "    seconds, thumbnail, url, audio_available "
+                       "FROM videos "
 
-    QSqlQuery videos_query(db);
-    if (!videos_query.prepare(
-            "SELECT id, created_at, video_id, title, author,"
-            "    seconds, thumbnail, url, audio_available "
-            "FROM videos "
+                       "WHERE (created_at < :last_created_at) "
+                       "OR (created_at = :last_created_at AND id < :last_id) "
 
-            "WHERE (created_at < :last_created_at) "
-            "OR (created_at = :last_created_at AND id < :last_id) "
+                       "ORDER BY created_at DESC, id DESC "
 
-            "ORDER BY created_at DESC, id DESC "
-
-            "LIMIT :limit;")) {
+                       "LIMIT :limit;")) {
         log_error("Failed to prepare query for select chunk");
     }
-    videos_query.bindValue(":last_id", last_id);
-    videos_query.bindValue(":last_created_at", last_created_at);
-    videos_query.bindValue(":limit", chunk_size);
-    videos_query.setForwardOnly(true);
+    query.bindValue(":last_id", last_id);
+    query.bindValue(":last_created_at", last_created_at);
+    query.bindValue(":limit", chunk_size);
+    query.setForwardOnly(true);
 
-    return videos_query;
+    return query;
 }
 
-QSqlQuery Database::create_insert_video(const VideoInfo& info,
-                                        const qint64 created_at) {
-    QSqlDatabase db = QSqlDatabase::database(connection_name_);
-    QSqlQuery insert_video(db);
-    if (!insert_video.prepare(
-            "INSERT INTO videos"
-            "("
-            "    created_at, video_id, title, author, seconds,"
-            "    thumbnail, url, audio_available"
-            ")"
+// Selected by oldest to newest
+QSqlQuery Database::create_select_formats(const qint64 videos_id) {
+    QSqlQuery query = make_query();
+    if (!query.prepare("SELECT format_id, container, width, height, fps "
+                       "FROM formats "
 
-            "VALUES"
-            "("
-            "    :created_at, :video_id, :title, :author, :seconds,"
-            "    :thumbnail, :url, :audio_available"
-            ");")) {
+                       "WHERE videos_id = :videos_id "
+
+                       "ORDER BY id ASC;")) {
+        log_error("Failed to prepare query for selecting formats");
+    }
+    query.bindValue(":videos_id", videos_id);
+    query.setForwardOnly(true);
+
+    return query;
+}
+
+optional<qint64> Database::fetch_last_insert_id() {
+    QSqlQuery query = make_query();
+
+    if (query.exec("SELECT last_insert_rowid();") && query.next() &&
+        query.value(0).canConvert<qint64>()) {
+        return query.value(0).toLongLong();
+    }
+    log_error("Failed to fetch last insert id");
+
+    return nullopt;
+}
+
+bool Database::insert_video(const VideoInfo& info, const qint64 created_at) {
+    QSqlQuery query = make_query();
+    if (!query.prepare("INSERT INTO videos"
+                       "("
+                       "    created_at, video_id, title, author, seconds,"
+                       "    thumbnail, url, audio_available"
+                       ")"
+
+                       "VALUES"
+                       "("
+                       "    :created_at, :video_id, :title, :author, :seconds,"
+                       "    :thumbnail, :url, :audio_available"
+                       ");")) {
         log_error("Failed to prepare query for inserting video");
     }
+    query.bindValue(":created_at", created_at);
+    query.bindValue(":video_id", info.video_id());
+    query.bindValue(":title", info.title());
+    query.bindValue(":author", info.author());
+    query.bindValue(":seconds", info.seconds());
+    query.bindValue(":thumbnail", info.thumbnail());
+    query.bindValue(":url", info.url());
+    query.bindValue(":audio_available", info.audio_available());
 
-    insert_video.bindValue(":created_at", created_at);
-    insert_video.bindValue(":video_id", info.video_id());
-    insert_video.bindValue(":title", info.title());
-    insert_video.bindValue(":author", info.author());
-    insert_video.bindValue(":seconds", info.seconds());
-    insert_video.bindValue(":thumbnail", info.thumbnail());
-    insert_video.bindValue(":url", info.url());
-    insert_video.bindValue(":audio_available", info.audio_available());
+    bool ok = query.exec();
+    if (!ok) log_error("Failed to add video");
 
-    return insert_video;
+    return ok;
 }
 
-QSqlQuery Database::create_insert_format(const VideoFormat& format,
-                                         const qint64 videos_id) {
-    QSqlDatabase db = QSqlDatabase::database(connection_name_);
-
-    QSqlQuery insert_format(db);
-    if (!insert_format.prepare(
+bool Database::insert_format(const VideoFormat& format,
+                             const qint64 videos_id) {
+    QSqlQuery query = make_query();
+    if (!query.prepare(
             "INSERT INTO formats"
             "("
             "    format_id, container, width, height, fps, videos_id"
@@ -389,42 +395,40 @@ QSqlQuery Database::create_insert_format(const VideoFormat& format,
             ");")) {
         log_error("Failed to prepare query for inserting format");
     }
+    query.bindValue(":format_id", format.format_id());
+    query.bindValue(":container", format.container());
+    query.bindValue(":width", format.width());
+    query.bindValue(":height", format.height());
+    query.bindValue(":fps", format.fps());
+    query.bindValue(":videos_id", videos_id);
 
-    insert_format.bindValue(":format_id", format.format_id());
-    insert_format.bindValue(":container", format.container());
-    insert_format.bindValue(":width", format.width());
-    insert_format.bindValue(":height", format.height());
-    insert_format.bindValue(":fps", format.fps());
-    insert_format.bindValue(":videos_id", videos_id);
+    bool ok = query.exec();
+    if (!ok) log_error("Failed to add format");
 
-    return insert_format;
+    return ok;
 }
 
-// Selected by oldest to newest
-QSqlQuery Database::create_select_formats(const qint64 videos_id) {
-    const QSqlDatabase db = QSqlDatabase::database(connection_name_);
+QSqlQuery Database::make_query() { return QSqlQuery(make_connection()); }
 
-    QSqlQuery formats_query(db);
-    if (!formats_query.prepare(
-            "SELECT format_id, container, width, height, fps "
-            "FROM formats "
-
-            "WHERE videos_id = :videos_id "
-
-            "ORDER BY id ASC;")) {
-        log_error("Failed to prepare query for selecting formats");
-    }
-    formats_query.bindValue(":videos_id", videos_id);
-    formats_query.setForwardOnly(true);
-
-    return formats_query;
+QSqlDatabase Database::make_connection() {
+    return QSqlDatabase::database(connection_name_);
 }
 
 void Database::log_error(QString message) {
     emit errorPushed("[History] " % std::move(message));
 }
 
-bool create_database(const QString& file_name, const QString& connection_name);
+static bool create_database(const QString& file_name, const QString& connection_name) {
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connection_name);
+    db.setDatabaseName(file_name);
+
+    if (!db.open()) {
+        qDebug() << "[History] Failed to open history";
+        return false;
+    }
+
+    return true;
+}
 
 Database::Database(const QString& file_name, QString connection_name,
                    QObject* parent)
@@ -436,18 +440,6 @@ Database::Database(const QString& file_name, QString connection_name,
 
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
     valid_ = create_tables();
-}
-
-bool create_database(const QString& file_name, const QString& connection_name) {
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connection_name);
-    db.setDatabaseName(file_name);
-
-    if (!db.open()) {
-        qDebug() << "[History] Failed to open history";
-        return false;
-    }
-
-    return true;
 }
 
 }  // namespace yd_gui
