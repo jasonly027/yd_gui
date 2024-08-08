@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qstringview.h>
 #include <qtmetamacros.h>
 
 #include <QList>
@@ -57,10 +58,11 @@ class Downloader : public QObject {
     bool program_exists() const;
 
    private:
+    void async_parse_raw_info(const QByteArray& data);
+
     QProcess* create_fetch_process(const QString& url);
 
-    QProcess* create_download_process(const QString& format_id,
-                                      const QString& url);
+    QProcess* create_download_process(ManagedVideo& video);
 
     QProcess* create_generic_process();
 

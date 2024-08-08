@@ -1,6 +1,10 @@
 #include "downloader.h"
 
+#include <qdebug.h>
+#include <qfuturewatcher.h>
+#include <qobject.h>
 #include <qrunnable.h>
+#include <qstringview.h>
 #include <qthreadpool.h>
 #include <qtmetamacros.h>
 
@@ -137,20 +141,8 @@ void Downloader::fetch_info(const QString& url) {
 
     QProcess* yt_dlp = create_fetch_process(url);
 
-    QObject::connect(yt_dlp, &QProcess::finished, this, [=, this] {
-        QTextStream stream(yt_dlp->readAllStandardOutput());
-
-        while (!stream.atEnd()) {
-            optional<VideoInfo> info = parseRawInfo(stream.readLine());
-
-            if (!info.has_value()) {
-                emit this->fetchInfoBadParse();
-            } else {
-                emit this->infoPushed(std::move(info.value()));
-            }
-        }
-
-        this->set_is_fetching(false);
+    QObject::connect(yt_dlp, &QProcess::finished, this, [yt_dlp, this] {
+        async_parse_raw_info(yt_dlp->readAllStandardOutput());
     });
 
     yt_dlp->start();
@@ -167,22 +159,82 @@ void Downloader::enqueue_video(ManagedVideo* const video) {
     }
 }
 
+static void streamed_parse_raw_info(QPromise<optional<VideoInfo>>& promise,
+                                    const QByteArray& data) {
+    QTextStream stream(data);
+
+    while (!stream.atEnd()) {
+        promise.addResult(Downloader::parseRawInfo(stream.readLine()));
+    }
+}
+
+void Downloader::async_parse_raw_info(const QByteArray& data) {
+    auto* watcher = new QFutureWatcher<optional<VideoInfo>>;
+
+    QObject::connect(watcher,
+                     &QFutureWatcher<optional<VideoInfo>>::resultReadyAt, this,
+                     [watcher, this](int index) {
+                         auto info = watcher->resultAt(index);
+
+                         if (info.has_value()) {
+                             emit this->infoPushed(std::move(info.value()));
+                         } else {
+                             emit this->fetchInfoBadParse();
+                         }
+                     });
+
+    QObject::connect(watcher, &QFutureWatcher<optional<VideoInfo>>::finished,
+                     this, [watcher, this] {
+                         this->set_is_fetching(false);
+
+                         watcher->deleteLater();
+                     });
+
+    watcher->setFuture(QtConcurrent::run(streamed_parse_raw_info, data));
+}
+
 QProcess* Downloader::create_fetch_process(const QString& url) {
     QProcess* yt_dlp = create_generic_process();
-    yt_dlp->setArguments({"--dump-json", url});
+    yt_dlp->setArguments({"--dump-json", "--playlist-reverse", url});
     return yt_dlp;
 }
 
-QProcess* Downloader::create_download_process(const QString& format_id,
-                                              const QString& url) {
+QProcess* Downloader::create_download_process(ManagedVideo& video) {
     QProcess* yt_dlp = create_generic_process();
+
     QString format_arg = "ba";
-    if (format_id != "") {
-        format_arg = format_id % "+" % format_arg;
+    if (video.selected_format() != "") {
+        format_arg = video.selected_format() % "+" % format_arg;
     }
+
     yt_dlp->setArguments({"--quiet", "--progress", "--progress-template",
                           "%(progress._percent_str)s", "--newline", "-f",
-                          std::move(format_arg), url});
+                          std::move(format_arg), video.info().url()});
+
+    QObject::connect(&video, &ManagedVideo::requestCancelDownload, yt_dlp,
+                     &QProcess::kill);
+
+    QObject::connect(
+        yt_dlp, &QProcess::readyReadStandardOutput, &video, [yt_dlp, &video] {
+            const QString data = yt_dlp->readAllStandardOutput();
+
+            const QRegularExpression re(
+                R"#(^( (?<percent>100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?%)\n)+$)#");
+            const auto match = re.match(data);
+
+            if (match.hasMatch()) {
+                video.setProgress(match.captured("percent"));
+            }
+        });
+
+    QObject::connect(
+        yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        &video, [&video](int exit_code, QProcess::ExitStatus exit_status) {
+            if (exit_status == QProcess::ExitStatus::NormalExit &&
+                exit_code == 0) {
+                video.setProgress("100%");
+            }
+        });
 
     return yt_dlp;
 }
@@ -226,33 +278,7 @@ void Downloader::start_download() {
 
     ManagedVideo* const video = queue_.takeFirst();
 
-    QProcess* yt_dlp =
-        create_download_process(video->selected_format(), video->info().url());
-
-    QObject::connect(video, &ManagedVideo::requestCancelDownload, yt_dlp,
-                     &QProcess::kill);
-
-    QObject::connect(
-        yt_dlp, &QProcess::readyReadStandardOutput, video, [yt_dlp, video] {
-            const QString data = yt_dlp->readAllStandardOutput();
-
-            const QRegularExpression re(
-                R"#(^( (?<percent>100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?%)\n)+$)#");
-            const auto match = re.match(data);
-
-            if (match.hasMatch()) {
-                video->setProgress(match.captured("percent"));
-            }
-        });
-
-    QObject::connect(
-        yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-        video, [video](int exit_code, QProcess::ExitStatus exit_status) {
-            if (exit_status == QProcess::ExitStatus::NormalExit &&
-                exit_code == 0) {
-                video->setProgress("100%");
-            }
-        });
+    QProcess* yt_dlp = create_download_process(*video);
 
     QObject::connect(yt_dlp, &QProcess::finished, this, [this]() {
         set_is_downloading(false);
@@ -292,5 +318,4 @@ bool Downloader::check_program_exists() {
     return found;
 }
 
-namespace downloader_util {}
 }  // namespace yd_gui

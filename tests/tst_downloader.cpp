@@ -256,7 +256,7 @@ class DownloaderTest : public VideoFixture {
 TEST_F(DownloaderTest, FetchInfoCks) {
     dl_.fetch_info(cks_info_.url());
 
-    info_pushed_spy_.wait(10000);
+    while (fetching_spy_.wait(10000) && fetching_spy_.count() < 2);
 
     EXPECT_EQ(fetching_spy_.count(), 2);
     ASSERT_EQ(info_pushed_spy_.count(), 1);
@@ -271,7 +271,7 @@ TEST_F(DownloaderTest, FetchInfoCks) {
 TEST_F(DownloaderTest, FetchInfoJm) {
     dl_.fetch_info(jm_info_.url());
 
-    info_pushed_spy_.wait(10000);
+    while (fetching_spy_.wait(10000) && fetching_spy_.count() < 2);
 
     EXPECT_EQ(fetching_spy_.count(), 2);
     ASSERT_EQ(info_pushed_spy_.count(), 1);
@@ -287,24 +287,26 @@ TEST_F(DownloaderTest, FetchInfoJm) {
 TEST_F(DownloaderTest, FetchInfoPlaylist) {
     dl_.fetch_info(playlist_);
 
-    while (info_pushed_spy_.wait(10000) && info_pushed_spy_.count() < 2);
+    while (fetching_spy_.wait(10000) && fetching_spy_.count() < 2);
 
     EXPECT_EQ(fetching_spy_.count(), 2);
     ASSERT_EQ(info_pushed_spy_.count(), 2);
 
+    // Infos are expected to come in in the reverse order of the playlist
+
     const auto var1 = info_pushed_spy_.takeFirst().takeFirst();
     ASSERT_TRUE(var1.canConvert<VideoInfo>());
-    const auto should_be_jm_info = std::move(var1).value<VideoInfo>();
-
-    check_infos_equal_excluding_formats(should_be_jm_info, jm_info_);
-    check_is_subset(jm_info_.formats(), should_be_jm_info.formats());
-
-    const auto var2 = info_pushed_spy_.takeFirst().takeFirst();
-    ASSERT_TRUE(var2.canConvert<VideoInfo>());
-    const auto should_be_zoo_info = std::move(var2).value<VideoInfo>();
+    const auto should_be_zoo_info = std::move(var1).value<VideoInfo>();
 
     check_infos_equal_excluding_formats(should_be_zoo_info, zoo_info_);
     check_is_subset(zoo_info_.formats(), should_be_zoo_info.formats());
+
+    const auto var2 = info_pushed_spy_.takeFirst().takeFirst();
+    ASSERT_TRUE(var2.canConvert<VideoInfo>());
+    const auto should_be_jm_info = std::move(var2).value<VideoInfo>();
+
+    check_infos_equal_excluding_formats(should_be_jm_info, jm_info_);
+    check_is_subset(jm_info_.formats(), should_be_jm_info.formats());
 }
 
 TEST_F(DownloaderTest, EnqueueOneVideo) {
