@@ -3,6 +3,7 @@
 #include <qdebug.h>
 #include <qfuturewatcher.h>
 #include <qobject.h>
+#include <qprocess.h>
 #include <qrunnable.h>
 #include <qstringview.h>
 #include <qthreadpool.h>
@@ -149,9 +150,17 @@ void Downloader::fetch_info(const QString& url) {
 }
 
 void Downloader::enqueue_video(ManagedVideo* const video) {
-    QObject::connect(video, &ManagedVideo::requestCancelDownload, this,
-                     [this, video]() { queue_.removeOne(video); });
+    if (video->state() == DownloadState::kQueued ||
+        video->state() == DownloadState::kDownloading)
+        return;
 
+    QObject::connect(video, &ManagedVideo::requestCancelDownload, this,
+                     [this, video]() {
+                         video->setState(DownloadState::kAdded);
+                         queue_.removeOne(video);
+                     });
+
+    video->setState(DownloadState::kQueued);
     queue_ << video;
 
     if (queue_.size() == 1 && !is_downloading_) {
@@ -233,6 +242,7 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
             if (exit_status == QProcess::ExitStatus::NormalExit &&
                 exit_code == 0) {
                 video.setProgress("100%");
+                video.setState(DownloadState::kComplete);
             }
         });
 
@@ -277,13 +287,21 @@ void Downloader::start_download() {
     set_is_downloading(true);
 
     ManagedVideo* const video = queue_.takeFirst();
+    video->setState(DownloadState::kDownloading);
 
     QProcess* yt_dlp = create_download_process(*video);
 
-    QObject::connect(yt_dlp, &QProcess::finished, this, [this]() {
-        set_is_downloading(false);
-        start_download();
-    });
+    QObject::connect(
+        yt_dlp, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        this, [this](int exit_code, QProcess::ExitStatus exit_status) {
+            if (exit_status != QProcess::ExitStatus::NormalExit ||
+                exit_code != 0)
+                emit standardErrorPushed(
+                    "[Downloader] Subprocess finished abnormally\n");
+
+            set_is_downloading(false);
+            start_download();
+        });
 
     yt_dlp->start();
 }

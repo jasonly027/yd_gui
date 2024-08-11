@@ -1,9 +1,11 @@
 #include "video.h"
 
 #include <qtmetamacros.h>
+#include <qvariant.h>
 
 #include <QDebug>
 #include <QtLogging>
+#include <iostream>
 #include <utility>
 
 namespace yd_gui {
@@ -95,21 +97,22 @@ std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
 }
 
 ManagedVideo::ManagedVideo(qint64 id, qint64 created_at, VideoInfo info,
-                           QObject* parent)
+                           DownloadState state, QObject* parent)
     : QObject(parent),
       id_(id),
       created_at_(created_at),
       info_(std::move(info)),
       selected_format_(
-          !info_.formats().empty() ? info_.formats().last().format_id() : "") {
+          !info_.formats().empty() ? info_.formats().last().format_id() : ""),
+      state_(state) {
     if (!info_.formats().empty()) {
         selected_format_ = info_.formats().last().format_id();
     }
 }
 
 ManagedVideo::ManagedVideo(ManagedVideoParts parts, QObject* parent)
-    : ManagedVideo(get<0>(parts), get<1>(parts), get<2>(std::move(parts)),
-                   parent) {}
+    : ManagedVideo(parts.id, parts.created_at, std::move(parts.info),
+                   parts.state, parent) {}
 
 void ManagedVideo::setProgress(QString progress) {
     if (progress == progress_) return;
@@ -123,6 +126,76 @@ void ManagedVideo::setSelectedFormat(QString selected_format) {
     emit selectedFormatChanged();
 }
 
+void ManagedVideo::setState(DownloadState state) {
+    /* States can only advance to the next sequential state
+       However, they can always return to the added state (because of
+       cancellable downloads)
+
+       The only reason these state changes are enforced is because
+       it cannot be discerned if a QProcess ended naturally or was
+       killed. Both events returns a NormalExit and exitCode of 0
+       through QProcess::finished.
+
+       A cancelled download should return the video to the added state
+       but that cannot be differentiated from a completed download,
+       which should set the video to the completed state.
+    */
+    switch (state_) {
+        case DownloadState::kAdded:
+            switch (state) {
+                case DownloadState::kAdded:
+                    return;
+                case DownloadState::kQueued:
+                    state_ = state;
+                    break;
+                case DownloadState::kDownloading:
+                case DownloadState::kComplete:
+                    return;
+            }
+            break;
+        case DownloadState::kQueued:
+            switch (state) {
+                case DownloadState::kAdded:
+                    state_ = state;
+                    break;
+                case DownloadState::kQueued:
+                    return;
+                case DownloadState::kDownloading:
+                    state_ = state;
+                    break;
+                case DownloadState::kComplete:
+                    return;
+            }
+            break;
+        case DownloadState::kDownloading:
+            switch (state) {
+                case DownloadState::kAdded:
+                    state_ = state;
+                    break;
+                case DownloadState::kQueued:
+                case DownloadState::kDownloading:
+                    return;
+                case DownloadState::kComplete:
+                    state_ = state;
+                    break;
+            }
+            break;
+        case DownloadState::kComplete:
+            switch (state) {
+                case DownloadState::kAdded:
+                    state_ = state;
+                    break;
+                case DownloadState::kQueued:
+                case DownloadState::kDownloading:
+                case DownloadState::kComplete:
+                    return;
+            }
+            break;
+    }
+
+    emit stateChanged(state_);
+}
+
 qint64 ManagedVideo::id() const { return id_; }
 
 qint64 ManagedVideo::created_at() const { return created_at_; }
@@ -133,6 +206,13 @@ QString ManagedVideo::progress() const { return progress_; }
 
 const QString& ManagedVideo::selected_format() const {
     return selected_format_;
+}
+
+ManagedVideo::DownloadState ManagedVideo::state() const { return state_; }
+
+bool operator==(const ManagedVideoParts& lhs, const ManagedVideoParts& rhs) {
+    return lhs.id == rhs.id && lhs.created_at == rhs.created_at &&
+           lhs.info == rhs.info && lhs.state == rhs.state;
 }
 
 }  // namespace yd_gui

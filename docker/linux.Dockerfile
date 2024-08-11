@@ -35,4 +35,4 @@ RUN cmake --build build --config Release --target yd_gui_tests
 
 WORKDIR /app/build
 
-CMD ctest --build-config Release --output-on-failure -E "yd_gui_qml_tests"
+CMD ctest --build-config Release -j18 --output-on-failure -E "yd_gui_qml_tests"

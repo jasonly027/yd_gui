@@ -2,14 +2,10 @@
 #include <qabstractitemmodel.h>
 #include <qlist.h>
 
-#include <tuple>
-
 #include "video.h"
 #include "video_list_model.h"
 
 namespace yd_gui {
-
-using std::make_tuple;
 
 using VideoListModelRole = VideoListModel::VideoListModelRole;
 
@@ -22,15 +18,43 @@ class VideoListModelTest : public testing::Test {
    protected:
     explicit VideoListModelTest() { EXPECT_TRUE(db_.valid()); }
 
-    QList<ManagedVideoParts> parts_same_{make_tuple(4, 4, VideoInfo()),
-                                         make_tuple(4, 4, VideoInfo()),
-                                         make_tuple(4, 4, VideoInfo())};
-    QList<ManagedVideoParts> parts_ascending_{make_tuple(1, 1, VideoInfo()),
-                                              make_tuple(2, 2, VideoInfo()),
-                                              make_tuple(3, 3, VideoInfo())};
-    QList<ManagedVideoParts> parts_descending_{make_tuple(3, 3, VideoInfo()),
-                                               make_tuple(2, 2, VideoInfo()),
-                                               make_tuple(1, 1, VideoInfo())};
+    QList<ManagedVideoParts> parts_same_{{.id = 4,
+                                          .created_at = 4,
+                                          .info = VideoInfo(),
+                                          .state = DownloadState::kAdded},
+                                         {.id = 4,
+                                          .created_at = 4,
+                                          .info = VideoInfo(),
+                                          .state = DownloadState::kAdded},
+                                         {.id = 4,
+                                          .created_at = 4,
+                                          .info = VideoInfo(),
+                                          .state = DownloadState::kAdded}};
+    QList<ManagedVideoParts> parts_ascending_{{.id = 1,
+                                               .created_at = 1,
+                                               .info = VideoInfo(),
+                                               .state = DownloadState::kAdded},
+                                              {.id = 2,
+                                               .created_at = 2,
+                                               .info = VideoInfo(),
+                                               .state = DownloadState::kAdded},
+                                              {.id = 3,
+                                               .created_at = 3,
+                                               .info = VideoInfo(),
+                                               .state = DownloadState::kAdded}};
+    QList<ManagedVideoParts> parts_descending_{
+        {.id = 3,
+         .created_at = 3,
+         .info = VideoInfo(),
+         .state = DownloadState::kAdded},
+        {.id = 2,
+         .created_at = 2,
+         .info = VideoInfo(),
+         .state = DownloadState::kAdded},
+        {.id = 1,
+         .created_at = 1,
+         .info = VideoInfo(),
+         .state = DownloadState::kAdded}};
 
     static constexpr int kCreatedAtRole =
         static_cast<int>(VideoListModelRole::kCreatedAtRole);
@@ -55,7 +79,7 @@ TEST_F(VideoListModelTest, AppendVideos) {
             model_.data(index, kCreatedAtRole).toLongLong(&ok);
         EXPECT_TRUE(ok);
 
-        const qint64 expected_created_at = get<1>(parts_ascending_[i]);
+        const qint64 expected_created_at = parts_ascending_[i].created_at;
 
         EXPECT_EQ(created_at, expected_created_at)
             << "Videos are in an unexpected order";
@@ -77,7 +101,7 @@ TEST_F(VideoListModelTest, PrependVideos) {
             model_.data(index, kCreatedAtRole).toLongLong(&ok);
         EXPECT_TRUE(ok);
 
-        const qint64 expected_created_at = get<1>(parts_ascending_[i]);
+        const qint64 expected_created_at = parts_ascending_[i].created_at;
 
         EXPECT_EQ(created_at, expected_created_at)
             << "Videos are in an unexpected order";
@@ -102,7 +126,7 @@ TEST_F(VideoListModelTest, AppendThenPrependVideos) {
             model_.data(index, kCreatedAtRole).toLongLong(&ok);
         EXPECT_TRUE(ok);
 
-        const qint64 expected_created_at = get<1>(expected_parts[i]);
+        const qint64 expected_created_at = expected_parts[i].created_at;
 
         EXPECT_EQ(created_at, expected_created_at)
             << "Videos are in an unexpected order";
@@ -127,7 +151,7 @@ TEST_F(VideoListModelTest, PrependThenAppendVideos) {
             model_.data(index, kCreatedAtRole).toLongLong(&ok);
         EXPECT_TRUE(ok);
 
-        const qint64 expected_created_at = get<1>(expected_parts[i]);
+        const qint64 expected_created_at = expected_parts[i].created_at;
 
         EXPECT_EQ(created_at, expected_created_at)
             << "Videos are in an unexpected order";

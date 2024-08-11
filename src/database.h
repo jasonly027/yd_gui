@@ -45,7 +45,7 @@ class Database : public QObject {
    public slots:
     void setValid(bool valid);
 
-    void addVideo(const VideoInfo& info);
+    void addVideo(VideoInfo info);
 
     void removeVideo(qint64 id);
 

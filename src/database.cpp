@@ -12,13 +12,12 @@
 #include <QtTypes>
 #include <algorithm>
 #include <optional>
-#include <tuple>
 
 #include "video.h"
 
 namespace yd_gui {
 
-using std::make_tuple, std::tuple, std::nullopt, std::optional;
+using std::nullopt, std::optional;
 
 Database::~Database() { QSqlDatabase::removeDatabase(connection_name_); }
 
@@ -70,7 +69,7 @@ void Database::setValid(const bool valid) {
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-void Database::addVideo(const VideoInfo& info) {
+void Database::addVideo(VideoInfo info) {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
     if (!db.transaction()) {
         log_error("Failed to add video (start add)");
@@ -104,7 +103,10 @@ void Database::addVideo(const VideoInfo& info) {
         return;
     }
 
-    emit videosPushed({make_tuple(videos_id, created_at, info)});
+    emit videosPushed({ManagedVideoParts{.id = videos_id,
+                                         .created_at = created_at,
+                                         .info = std::move(info),
+                                         .state = DownloadState::kAdded}});
 }
 
 void Database::removeVideo(const qint64 id) {
@@ -231,11 +233,14 @@ QList<ManagedVideoParts> Database::extract_videos(QSqlQuery videos_query) {
 
         auto formats = extract_formats(std::move(formats_query));
 
-        videos << make_tuple(
-            id, created_at,
-            VideoInfo(std::move(video_id), std::move(title), std::move(author),
-                      seconds, std::move(thumbnail), std::move(url),
-                      std::move(formats), audio_available));
+        videos << ManagedVideoParts{
+            .id = id,
+            .created_at = created_at,
+            .info =
+                VideoInfo(std::move(video_id), std::move(title),
+                          std::move(author), seconds, std::move(thumbnail),
+                          std::move(url), std::move(formats), audio_available),
+            .state = DownloadState::kComplete};
     }
 
     return videos;
@@ -418,7 +423,8 @@ void Database::log_error(QString message) {
     emit errorPushed("[History] " % std::move(message));
 }
 
-static bool create_database(const QString& file_name, const QString& connection_name) {
+static bool create_database(const QString& file_name,
+                            const QString& connection_name) {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connection_name);
     db.setDatabaseName(file_name);
 
