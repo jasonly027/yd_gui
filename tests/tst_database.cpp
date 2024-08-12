@@ -1,8 +1,10 @@
 #include <database.h>
 #include <downloader.h>
 #include <gtest/gtest.h>
+#include <qcontainerfwd.h>
 #include <qlist.h>
 #include <qsignalspy.h>
+#include <qtypes.h>
 
 #include <QDateTime>
 #include <QObject>
@@ -18,16 +20,13 @@
 #include <limits>
 #include <utility>
 
+#include "_tst_util.h"  // IWYU pragma: keep
+#include "gmock/gmock.h"
 #include "video.h"
 
-using std::tuple;
+using namespace tst_util;  // NOLINT(google-build-using-namespace)
 
 namespace yd_gui {
-
-static QString get_test_name() {
-    return QString::fromStdString(
-        ::testing::UnitTest::GetInstance()->current_test_info()->name());
-}
 
 class DatabaseTest : public testing::Test {
    protected:
@@ -41,20 +40,18 @@ class DatabaseTest : public testing::Test {
                          });
     };
 
-    QSqlQuery create_query() {
+    QSqlQuery make_query() {
         return QSqlQuery(QSqlDatabase::database(connection_name_));
     }
 
-    qint64 get_num_rows_in_videos() {
-        QSqlQuery query = create_query();
-        EXPECT_TRUE(query.exec("SELECT COUNT(*) FROM videos;"))
-            << "Query exec failed";
-        query.next();
+    qint64 rows_in_videos() {
+        QSqlQuery query = make_query();
 
-        bool ok = false;
-        qint64 rows = query.value(0).toLongLong(&ok);
-        EXPECT_TRUE(ok) << "Failed to convert row count to qint64";
-        return rows;
+        EXPECT_TRUE(query.exec("SELECT COUNT(*) FROM videos;") &&
+                    query.next() && query.value(0).canConvert<qint64>())
+            << "Failed to fetch videos row count";
+
+        return query.value(0).value<qint64>();
     }
 
     // Convenience variables for when SELECT'ing
@@ -65,18 +62,14 @@ class DatabaseTest : public testing::Test {
         " id, format_id, container, width, height, fps, videos_id "};
 
     // Check ManagedVideo Components are in increasing order
-    static void check_managed_video_parts(
-        const QList<ManagedVideoParts>& parts) {
-        auto [last_id, last_created_at, last_info] = parts.first();
+    static void EXPECT_PARTS_ASC(const QList<ManagedVideoParts>& chunk) {
+        const ManagedVideoParts& first_parts = chunk.first();
 
-        for (const auto& parts : parts) {
-            const auto& [id, created_at, info] = parts;
+        auto [last_id, last_created_at, last_info, last_state] = first_parts;
+        for (const auto& parts : chunk) {
+            if (parts == first_parts) continue;  // Skip first parts;
 
-            // Skip first parts;
-            if (id == last_id && created_at == last_created_at &&
-                info == last_info) {
-                continue;
-            }
+            const auto& [id, created_at, info, state] = parts;
 
             EXPECT_GT(id, last_id) << "Parts were not ordered by increasing id";
             EXPECT_GE(created_at, last_created_at)
@@ -89,106 +82,96 @@ class DatabaseTest : public testing::Test {
 
     // Expects the query's values to be the same order as kVideosColumns
     // Returns back the query after using it
-    static void check_video_query(const QSqlRecord& record,
-                                  const VideoInfo& expected_info,
-                                  const qint64 expected_id,
-                                  const qint64 before_add,
-                                  const qint64 after_add) {
-        bool ok = false;
+    static void EXPECT_QUERY_EQ_INFO(const QSqlRecord& record,
+                                     const VideoInfo& expected_info,
+                                     const qint64 expected_id,
+                                     const qint64 before_add,
+                                     const qint64 after_add) {
+        const auto id = try_convert<qint64>(record.value(0));
+        const auto created_at = try_convert<qint64>(record.value(1));
+        const auto video_id = try_convert<QString>(record.value(2));
+        const auto title = try_convert<QString>(record.value(3));
+        const auto author = try_convert<QString>(record.value(4));
+        const auto seconds = try_convert<qint64>(record.value(5));
+        const auto thumbnail = try_convert<QString>(record.value(6));
+        const auto url = try_convert<QString>(record.value(7));
+        const auto audio_available = try_convert<bool>(record.value(8));
 
-        const qint64 id = record.value(0).toLongLong(&ok);
-        EXPECT_TRUE(ok) << "Failed to convert value to id";
-        const qint64 created_at = record.value(1).toLongLong(&ok);
-        EXPECT_TRUE(ok) << "Failed to convert value to created_at ";
-        const QString video_id = record.value(2).toString();
-        const QString title = record.value(3).toString();
-        const QString author = record.value(4).toString();
-        const qint64 seconds = record.value(5).toUInt(&ok);
-        EXPECT_TRUE(ok) << "Failed to convert value to seconds";
-        const QString thumbnail = record.value(6).toString();
-        const QString url = record.value(7).toString();
-        const bool audio_available = record.value(8).toBool();
+        EXPECT_EQ(id, expected_id);
 
-        EXPECT_EQ(id, expected_id) << "Unexpected id";
-        EXPECT_GE(created_at, before_add)
-            << "created_at timestamp was before addVideo initiated";
-        EXPECT_LE(created_at, after_add)
-            << "created_at timestamp was after addVideo completed";
-        EXPECT_EQ(video_id.toStdString(),
-                  expected_info.video_id().toStdString())
-            << "Unexpected video_id";
-        EXPECT_EQ(title.toStdString(), expected_info.title().toStdString())
-            << "Unexpected title";
-        EXPECT_EQ(author.toStdString(), expected_info.author().toStdString())
-            << "Unexpected author";
-        EXPECT_EQ(seconds, expected_info.seconds()) << "Unexpected seconds";
-        EXPECT_EQ(thumbnail.toStdString(),
-                  expected_info.thumbnail().toStdString())
-            << "Unexpected thumbnail";
-        EXPECT_EQ(url.toStdString(), expected_info.url().toStdString())
-            << "Unexpected url";
-        EXPECT_EQ(audio_available, expected_info.audio_available())
-            << "Unexpected audio_available";
+        EXPECT_THAT(created_at, IsBetween(before_add, after_add));
+
+        EXPECT_EQ(video_id, expected_info.video_id());
+
+        EXPECT_EQ(title, expected_info.title());
+
+        EXPECT_EQ(author, expected_info.author());
+
+        EXPECT_EQ(seconds, expected_info.seconds());
+
+        EXPECT_EQ(thumbnail, expected_info.thumbnail());
+
+        EXPECT_EQ(url, expected_info.url());
+
+        EXPECT_EQ(audio_available, expected_info.audio_available());
     }
 
-    void check_formats_query(const QList<VideoFormat>& expected_formats,
-                             const qint64 expected_videos_id) {
-        QSqlQuery query = create_query();
+    void EXPECT_QUERY_EQ_FORMATS(const QList<VideoFormat>& expected_formats,
+                                 const qint64 expected_videos_id) {
+        QSqlQuery query = make_query();
 
-        query.prepare(QString("SELECT") % kFormatsColumns %
-                      "FROM formats "
-                      "WHERE videos_id = :videos_id;");
+        EXPECT_TRUE(query.prepare(QString("SELECT") % kFormatsColumns %
+                                  "FROM formats "
+                                  "WHERE videos_id = :videos_id;"));
         query.bindValue(":videos_id", expected_videos_id);
         query.setForwardOnly(true);
         EXPECT_TRUE(query.exec()) << "Query failed";
 
         QList<VideoFormat> formats;
         while (query.next()) {
-            bool ok = false;
+            auto format_id = try_convert<QString>(query.value(1));
+            auto container = try_convert<QString>(query.value(2));
+            const auto width = try_convert<quint32>(query.value(3));
+            const auto height = try_convert<quint32>(query.value(4));
+            const auto fps = try_convert<float>(query.value(5));
+            const auto videos_id = try_convert<qint64>(query.value(6));
 
-            // unused
-            // const qint64 id = query.value(0).toLongLong(&ok);
-            QString format_id = query.value(1).toString();
-            QString container = query.value(2).toString();
-            const quint32 width = query.value(3).toUInt(&ok);
-            EXPECT_TRUE(ok) << "Failed to convert value to width";
-            const quint32 height = query.value(4).toUInt(&ok);
-            EXPECT_TRUE(ok) << "Failed to convert value to height";
-            const float fps = query.value(5).toFloat(&ok);
-            EXPECT_TRUE(ok) << "Failed to convert value to fps";
-
-            const qint64 videos_id = query.value(6).toLongLong(&ok);
-            EXPECT_TRUE(ok) << "Failed to convert value to videos_id";
             EXPECT_EQ(videos_id, expected_videos_id);
 
             formats << VideoFormat(std::move(format_id), std::move(container),
                                    width, height, fps);
         }
 
-        EXPECT_EQ(formats, expected_formats) << "Unexpected formats";
+        EXPECT_THAT(formats, ContainerEq(expected_formats));
     }
 
-    void check_add(const QSqlRecord& record, const VideoInfo& expected_info,
-                   const qint64 expected_id, const quint32 before_add,
-                   const quint32 after_add) {
-        check_video_query(record, expected_info, expected_id, before_add,
-                          after_add);
-        check_formats_query(expected_info.formats(), expected_id);
+    void EXPECT_QUERY_EQ_INFO_FORMATS(const QSqlRecord& record,
+                                      const VideoInfo& expected_info,
+                                      const qint64 expected_id,
+                                      const quint32 before_add,
+                                      const quint32 after_add) {
+        {
+            SCOPED_TRACE("");
+            EXPECT_QUERY_EQ_INFO(record, expected_info, expected_id, before_add,
+                                 after_add);
+        }
+        {
+            SCOPED_TRACE("");
+            EXPECT_QUERY_EQ_FORMATS(expected_info.formats(), expected_id);
+        }
     }
 
-    static void check_video_pushed(const ManagedVideoParts& parts,
-                                   const VideoInfo& expected_info,
-                                   const qint64 expected_id,
-                                   const quint32 before_add,
-                                   const quint32 after_add) {
-        const auto& [id, created_at, info] = parts;
+    static void EXPECT_PUSHED_EQ_INFO(const ManagedVideoParts& parts,
+                                      const VideoInfo& expected_info,
+                                      const qint64 expected_id,
+                                      const quint32 before_add,
+                                      const quint32 after_add) {
+        const auto& [id, created_at, info, state] = parts;
 
-        EXPECT_EQ(id, expected_id) << "Unexpected id";
-        EXPECT_GE(created_at, before_add)
-            << "created_at timestamp was before addVideo initiated";
-        EXPECT_LE(created_at, after_add)
-            << "created_at timestamp was after addVideo completed";
-        EXPECT_EQ(info, expected_info) << "Unexpected info";
+        EXPECT_EQ(id, expected_id);
+        EXPECT_THAT(created_at, IsBetween(before_add, after_add));
+        EXPECT_EQ(info, expected_info);
+        EXPECT_EQ(state, DownloadState::kAdded);
     }
 
     VideoInfo info1_{"info1",
@@ -210,7 +193,7 @@ class DatabaseTest : public testing::Test {
                       VideoFormat{"format2", "webm", 300, 400, 60}},
                      true};
 
-    const QString connection_name_{get_test_name()};
+    const QString connection_name_{QString::fromStdString(test_name())};
 
     Database db_{Database::get_temp(connection_name_)};
 
@@ -220,31 +203,31 @@ class DatabaseTest : public testing::Test {
 
     QSignalSpy valid_spy_{&db_, &Database::validChanged};
 
-    QSqlQuery query_{create_query()};
+    QSqlQuery query_{make_query()};
 };
 
 // Fetch tests assume add function works as intended
 
 TEST_F(DatabaseTest, FetchFirstChunkNoVideosInDb) {
-    const auto parts = db_.fetch_first_chunk();
+    const auto chunk = db_.fetch_first_chunk();
 
-    EXPECT_TRUE(parts.empty()) << "Fetch shouldn't have returned any parts";
+    EXPECT_TRUE(chunk.empty()) << "Fetch shouldn't have returned any parts";
 }
 
 TEST_F(DatabaseTest, FetchFirstChunkTwoVideosInDb) {
     db_.addVideo(info1_);
     db_.addVideo(info2_);
 
-    const auto parts = db_.fetch_first_chunk();
-    EXPECT_EQ(parts.size(), 2) << "Didn't fetch expected number of parts";
+    const auto chunk = db_.fetch_first_chunk();
+    EXPECT_EQ(chunk.size(), 2);
 
-    const auto [id1, created_at1, info1] = parts[0];
-    const auto [id2, created_at2, info2] = parts[1];
+    EXPECT_EQ(chunk[0].info, info1_);
+    EXPECT_EQ(chunk[1].info, info2_);
 
-    EXPECT_EQ(info1, info1_) << "Unexpected info";
-    EXPECT_EQ(info2, info2_) << "Unexpected info";
-
-    check_managed_video_parts(parts);
+    {
+        SCOPED_TRACE("");
+        EXPECT_PARTS_ASC(chunk);
+    }
 }
 
 TEST_F(DatabaseTest, FetchFirstChunkMoreVideosinDbThanChunkSize) {
@@ -255,18 +238,23 @@ TEST_F(DatabaseTest, FetchFirstChunkMoreVideosinDbThanChunkSize) {
     // Add one more over the chunk size
     db_.addVideo(info2_);
 
-    const auto parts = db_.fetch_first_chunk();
+    const auto chunk = db_.fetch_first_chunk();
 
-    EXPECT_EQ(parts.size(), Database::kChunkSize)
-        << "Fetch should have returned parts equal to the max chunk size";
+    EXPECT_EQ(ManagedVideo(chunk.last()).info(), info2_)
+        << "Last video should be the most recently added";
 
-    check_managed_video_parts(parts);
+    EXPECT_EQ(chunk.size(), Database::kChunkSize);
+
+    {
+        SCOPED_TRACE("");
+        EXPECT_PARTS_ASC(chunk);
+    }
 }
 
 TEST_F(DatabaseTest, FetchChunkNoVideosInDb) {
-    const auto parts = db_.fetch_chunk(0, 0);
+    const auto chunk = db_.fetch_chunk(0, 0);
 
-    EXPECT_TRUE(parts.empty()) << "Fetch shouldn't have returned any parts";
+    EXPECT_TRUE(chunk.empty()) << "Fetch shouldn't have returned any parts";
 }
 
 TEST_F(DatabaseTest, FetchChunkTwoVideosInDbGetBoth) {
@@ -274,16 +262,16 @@ TEST_F(DatabaseTest, FetchChunkTwoVideosInDbGetBoth) {
     db_.addVideo(info2_);
 
     constexpr auto kMax = std::numeric_limits<qint64>::max();
-    const auto parts = db_.fetch_chunk(kMax, kMax);
-    EXPECT_EQ(parts.size(), 2) << "Did not fetch expected number of videos";
+    const auto chunk = db_.fetch_chunk(kMax, kMax);
+    EXPECT_EQ(chunk.size(), 2);
 
-    const auto [id1, created_at1, info1] = parts[0];
-    const auto [id2, created_at2, info2] = parts[1];
+    EXPECT_EQ(chunk[0].info, info1_);
+    EXPECT_EQ(chunk[1].info, info2_);
 
-    EXPECT_EQ(info1, info1_) << "Unexpected info";
-    EXPECT_EQ(info2, info2_) << "Unexpected info";
-
-    check_managed_video_parts(parts);
+    {
+        SCOPED_TRACE("");
+        EXPECT_PARTS_ASC(chunk);
+    }
 }
 
 TEST_F(DatabaseTest, FetchSecondChunk) {
@@ -296,25 +284,26 @@ TEST_F(DatabaseTest, FetchSecondChunk) {
         db_.addVideo(info2_);
     }
 
-    const auto first_parts = db_.fetch_first_chunk();
-    EXPECT_EQ(first_parts.size(), Database::kChunkSize);
+    const auto first_chunk = db_.fetch_first_chunk();
+    EXPECT_EQ(first_chunk.size(), Database::kChunkSize);
     // First chunk should be the most recent added videos
-    for (qsizetype i = 0; i < first_parts.size(); ++i) {
-        const auto& part = first_parts[i];
-        EXPECT_EQ(get<0>(part), i + Database::kChunkSize + 1);
-        EXPECT_EQ(get<2>(part), info2_);
+    for (qsizetype i = 0; i < first_chunk.size(); ++i) {
+        const auto& parts = first_chunk[i];
+        EXPECT_EQ(parts.id, i + Database::kChunkSize + 1);
+        EXPECT_EQ(parts.info, info2_);
     }
 
-    // Get oldest parts from first chunk
-    const auto& [last_id, last_created_at, last_info] = first_parts.first();
+    // Destructure oldest part from first chunk
+    const auto& [last_id, last_created_at, last_info, last_state] =
+        first_chunk.first();
 
-    const auto second_parts = db_.fetch_chunk(last_id, last_created_at);
-    EXPECT_EQ(second_parts.size(), Database::kChunkSize);
-    // Second chunk should be the chronologically first added chunk of videos
-    for (qsizetype i = 0; i < second_parts.size(); ++i) {
-        const auto& part = second_parts[i];
-        EXPECT_EQ(get<0>(part), i + 1);
-        EXPECT_EQ(get<2>(part), info1_);
+    const auto second_chunk = db_.fetch_chunk(last_id, last_created_at);
+    EXPECT_EQ(second_chunk.size(), Database::kChunkSize);
+    // Second chunk should be the chronologically first added videos
+    for (qsizetype i = 0; i < second_chunk.size(); ++i) {
+        const auto& part = second_chunk[i];
+        EXPECT_EQ(part.id, i + 1);
+        EXPECT_EQ(part.info, info1_);
     }
 }
 
@@ -330,7 +319,7 @@ TEST_F(DatabaseTest, SetValidToFalse) {
 
     EXPECT_EQ(valid_spy_.count(), 1)
         << "Should be true initially, resulting in a signal when set to false";
-    EXPECT_FALSE(valid_spy_.takeFirst().takeFirst().toBool())
+    EXPECT_FALSE(try_convert<bool>(valid_spy_.takeFirst().takeFirst()))
         << "Valid's new value should be false";
 }
 
@@ -339,25 +328,32 @@ TEST_F(DatabaseTest, AddOneVideo) {
     db_.addVideo(info1_);
     const auto after_add = QDateTime::currentSecsSinceEpoch();
 
-    EXPECT_EQ(get_num_rows_in_videos(), 1);
+    EXPECT_EQ(rows_in_videos(), 1);
 
     // Check info in db
     EXPECT_TRUE(query_.exec(QString("SELECT") % kVideosColumns %
                             "FROM videos "
                             "LIMIT 1;"));
     EXPECT_TRUE(query_.next());
-    check_add(query_.record(), info1_, 1, before_add, after_add);
+
+    {
+        SCOPED_TRACE("");
+        EXPECT_QUERY_EQ_INFO_FORMATS(query_.record(), info1_, 1, before_add,
+                                     after_add);
+    }
 
     // Check pushed video
     EXPECT_EQ(video_spy_.count(), 1);
 
-    const auto var = video_spy_.takeFirst().takeFirst();
-    ASSERT_TRUE(var.canConvert<QList<ManagedVideoParts>>());
-    const auto parts_list = var.value<QList<ManagedVideoParts>>();
+    const auto parts_list = try_convert<QList<ManagedVideoParts>>(
+        video_spy_.takeFirst().takeFirst());
 
     EXPECT_EQ(parts_list.size(), 1);
-
-    check_video_pushed(parts_list.first(), info1_, 1, before_add, after_add);
+    {
+        SCOPED_TRACE("");
+        EXPECT_PUSHED_EQ_INFO(parts_list.first(), info1_, 1, before_add,
+                              after_add);
+    }
 }
 
 TEST_F(DatabaseTest, AddTwoVideos) {
@@ -365,41 +361,53 @@ TEST_F(DatabaseTest, AddTwoVideos) {
     db_.addVideo(info1_);
     const auto after_add1 = QDateTime::currentSecsSinceEpoch();
 
-    EXPECT_EQ(get_num_rows_in_videos(), 1);
+    EXPECT_EQ(rows_in_videos(), 1);
 
     const auto before_add2 = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
     const auto after_add2 = QDateTime::currentSecsSinceEpoch();
 
-    EXPECT_EQ(get_num_rows_in_videos(), 2);
+    EXPECT_EQ(rows_in_videos(), 2);
 
     // Check info in db
     ASSERT_TRUE(query_.exec(QString("SELECT") % kVideosColumns %
                             "FROM videos "
                             "LIMIT 2;"));
     EXPECT_TRUE(query_.next());
-    check_add(query_.record(), info1_, 1, before_add1, after_add1);
+    {
+        SCOPED_TRACE("");
+        EXPECT_QUERY_EQ_INFO_FORMATS(query_.record(), info1_, 1, before_add1,
+                                     after_add1);
+    }
     EXPECT_TRUE(query_.next());
-    check_add(query_.record(), info2_, 2, before_add2, after_add2);
+    {
+        SCOPED_TRACE("");
+        EXPECT_QUERY_EQ_INFO_FORMATS(query_.record(), info2_, 2, before_add2,
+                                     after_add2);
+    }
 
     // Check pushed videos
     EXPECT_EQ(video_spy_.count(), 2);
 
-    const auto var1 = video_spy_.takeFirst().takeFirst();
-    ASSERT_TRUE(var1.canConvert<QList<ManagedVideoParts>>());
-    const auto parts_list1 = var1.value<QList<ManagedVideoParts>>();
+    const auto parts1 = try_convert<QList<ManagedVideoParts>>(
+        video_spy_.takeFirst().takeFirst());
+    EXPECT_EQ(parts1.size(), 1);
 
-    EXPECT_EQ(parts_list1.size(), 1);
+    {
+        SCOPED_TRACE("");
+        EXPECT_PUSHED_EQ_INFO(parts1.first(), info1_, 1, before_add1,
+                              after_add1);
+    }
 
-    check_video_pushed(parts_list1.first(), info1_, 1, before_add1, after_add1);
+    const auto parts2 = try_convert<QList<ManagedVideoParts>>(
+        video_spy_.takeFirst().takeFirst());
+    EXPECT_EQ(parts2.size(), 1);
 
-    const auto var2 = video_spy_.takeFirst().takeFirst();
-    ASSERT_TRUE(var2.canConvert<QList<ManagedVideoParts>>());
-    const auto parts_list2 = var2.value<QList<ManagedVideoParts>>();
-
-    EXPECT_EQ(parts_list2.size(), 1);
-
-    check_video_pushed(parts_list2.first(), info2_, 2, before_add1, after_add1);
+    {
+        SCOPED_TRACE("");
+        EXPECT_PUSHED_EQ_INFO(parts2.first(), info2_, 2, before_add1,
+                              after_add1);
+    }
 }
 
 TEST_F(DatabaseTest, RemoveOnEmptyDb) {
@@ -409,10 +417,10 @@ TEST_F(DatabaseTest, RemoveOnEmptyDb) {
 TEST_F(DatabaseTest, RemoveOnNonExistingId) {
     db_.addVideo(info1_);
     db_.addVideo(info2_);
-    EXPECT_EQ(get_num_rows_in_videos(), 2);
+    EXPECT_EQ(rows_in_videos(), 2);
 
     db_.removeVideo(3);
-    EXPECT_EQ(get_num_rows_in_videos(), 2);
+    EXPECT_EQ(rows_in_videos(), 2);
 }
 
 TEST_F(DatabaseTest, RemoveAllOnEmptyDb) {
@@ -421,58 +429,73 @@ TEST_F(DatabaseTest, RemoveAllOnEmptyDb) {
 
 TEST_F(DatabaseTest, RemoveOneVideo) {
     db_.addVideo(info1_);
-    EXPECT_EQ(get_num_rows_in_videos(), 1);
+    EXPECT_EQ(rows_in_videos(), 1);
 
     db_.removeVideo(1);
-    EXPECT_EQ(get_num_rows_in_videos(), 0);
+    EXPECT_EQ(rows_in_videos(), 0);
 }
 
 TEST_F(DatabaseTest, RemoveFirstOfTwoVideos) {
     db_.addVideo(info1_);
+
     const auto before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info2_);
     const auto after_add = QDateTime::currentSecsSinceEpoch();
-    EXPECT_EQ(get_num_rows_in_videos(), 2);
+
+    EXPECT_EQ(rows_in_videos(), 2);
 
     db_.removeVideo(1);
 
-    EXPECT_EQ(get_num_rows_in_videos(), 1);
+    EXPECT_EQ(rows_in_videos(), 1);
 
     EXPECT_TRUE(query_.exec(QString("SELECT") % kVideosColumns %
                             "FROM videos "
                             "LIMIT 1;"));
     EXPECT_TRUE(query_.next());
 
-    check_add(query_.record(), info2_, 2, before_add, after_add);
+    // Check remaining info, info2_, is still there
+    {
+        SCOPED_TRACE("");
+        EXPECT_QUERY_EQ_INFO_FORMATS(query_.record(), info2_, 2, before_add,
+                                     after_add);
+    }
 }
 
 TEST_F(DatabaseTest, RemoveSecondOfTwoVideos) {
     const auto before_add = QDateTime::currentSecsSinceEpoch();
     db_.addVideo(info1_);
     const auto after_add = QDateTime::currentSecsSinceEpoch();
+
     db_.addVideo(info2_);
-    EXPECT_EQ(get_num_rows_in_videos(), 2);
+
+    EXPECT_EQ(rows_in_videos(), 2);
 
     db_.removeVideo(2);
 
-    EXPECT_EQ(get_num_rows_in_videos(), 1);
+    EXPECT_EQ(rows_in_videos(), 1);
 
     EXPECT_TRUE(query_.exec(QString("SELECT") % kVideosColumns %
                             "FROM videos "
                             "LIMIT 1;"));
     EXPECT_TRUE(query_.next());
 
-    check_add(query_.record(), info1_, 1, before_add, after_add);
+    // Check remaining info, info1_, is still there
+    {
+        SCOPED_TRACE("");
+        EXPECT_QUERY_EQ_INFO_FORMATS(query_.record(), info1_, 1, before_add,
+                                     after_add);
+    }
 }
 
 TEST_F(DatabaseTest, RemoveAllOnTwoVideos) {
     db_.addVideo(info1_);
     db_.addVideo(info2_);
-    EXPECT_EQ(get_num_rows_in_videos(), 2);
+
+    EXPECT_EQ(rows_in_videos(), 2);
 
     db_.removeAllVideos();
 
-    EXPECT_EQ(get_num_rows_in_videos(), 0);
+    EXPECT_EQ(rows_in_videos(), 0);
 }
 
 }  // namespace yd_gui

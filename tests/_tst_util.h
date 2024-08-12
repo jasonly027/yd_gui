@@ -55,4 +55,10 @@ T try_convert(QVariant var) {
     return std::move(var).value<T>();
 }
 
+MATCHER_P2(IsBetween, min, max,
+           (std::string(negation ? "Isn't" : "Is") + " between " +
+            PrintToString(min) + " and " + PrintToString(max))) {
+    return min <= arg && arg <= max;
+}
+
 }  // namespace tst_util
