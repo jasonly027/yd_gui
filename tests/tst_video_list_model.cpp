@@ -1,65 +1,74 @@
 #include <gtest/gtest.h>
 #include <qabstractitemmodel.h>
 #include <qlist.h>
+#include <qtypes.h>
 
+#include "_tst_util.h"
 #include "video.h"
 #include "video_list_model.h"
+
+using namespace tst_util;  // NOLINT(google-build-using-namespace)
 
 namespace yd_gui {
 
 using VideoListModelRole = VideoListModel::VideoListModelRole;
 
-static QString get_test_name() {
-    return QString::fromStdString(
-        ::testing::UnitTest::GetInstance()->current_test_info()->name());
-}
-
 class VideoListModelTest : public testing::Test {
    protected:
     explicit VideoListModelTest() { EXPECT_TRUE(db_.valid()); }
 
-    QList<ManagedVideoParts> parts_same_{{.id = 4,
-                                          .created_at = 4,
-                                          .info = VideoInfo(),
-                                          .state = DownloadState::kAdded},
-                                         {.id = 4,
-                                          .created_at = 4,
-                                          .info = VideoInfo(),
-                                          .state = DownloadState::kAdded},
-                                         {.id = 4,
-                                          .created_at = 4,
-                                          .info = VideoInfo(),
-                                          .state = DownloadState::kAdded}};
-    QList<ManagedVideoParts> parts_ascending_{{.id = 1,
-                                               .created_at = 1,
-                                               .info = VideoInfo(),
-                                               .state = DownloadState::kAdded},
-                                              {.id = 2,
-                                               .created_at = 2,
-                                               .info = VideoInfo(),
-                                               .state = DownloadState::kAdded},
-                                              {.id = 3,
-                                               .created_at = 3,
-                                               .info = VideoInfo(),
-                                               .state = DownloadState::kAdded}};
-    QList<ManagedVideoParts> parts_descending_{
-        {.id = 3,
-         .created_at = 3,
-         .info = VideoInfo(),
-         .state = DownloadState::kAdded},
-        {.id = 2,
-         .created_at = 2,
-         .info = VideoInfo(),
-         .state = DownloadState::kAdded},
-        {.id = 1,
-         .created_at = 1,
-         .info = VideoInfo(),
-         .state = DownloadState::kAdded}};
-
     static constexpr int kCreatedAtRole =
         static_cast<int>(VideoListModelRole::kCreatedAtRole);
 
-    Database db_{Database::get_temp(get_test_name())};
+    static void EXPECT_EQ_CREATED_AT(
+        const VideoListModel& model,
+        const QList<ManagedVideoParts>& expected_parts) {
+        for (qsizetype i = 0; i < model.rowCount(); ++i) {
+            const auto created_at =
+                try_convert<qint64>(model.data(model.index(i), kCreatedAtRole));
+
+            EXPECT_EQ(created_at, expected_parts[i].created_at) << "At index " << i;
+        }
+    }
+
+    QList<ManagedVideoParts> parts_{{.id = 4,
+                                     .created_at = 4,
+                                     .info = VideoInfo(),
+                                     .state = DownloadState::kAdded},
+                                    {.id = 4,
+                                     .created_at = 4,
+                                     .info = VideoInfo(),
+                                     .state = DownloadState::kAdded},
+                                    {.id = 4,
+                                     .created_at = 4,
+                                     .info = VideoInfo(),
+                                     .state = DownloadState::kAdded}};
+    QList<ManagedVideoParts> parts_asc_{{.id = 1,
+                                         .created_at = 1,
+                                         .info = VideoInfo(),
+                                         .state = DownloadState::kAdded},
+                                        {.id = 2,
+                                         .created_at = 2,
+                                         .info = VideoInfo(),
+                                         .state = DownloadState::kAdded},
+                                        {.id = 3,
+                                         .created_at = 3,
+                                         .info = VideoInfo(),
+                                         .state = DownloadState::kAdded}};
+    QList<ManagedVideoParts> parts_desc_{{.id = 3,
+                                          .created_at = 3,
+                                          .info = VideoInfo(),
+                                          .state = DownloadState::kAdded},
+                                         {.id = 2,
+                                          .created_at = 2,
+                                          .info = VideoInfo(),
+                                          .state = DownloadState::kAdded},
+                                         {.id = 1,
+                                          .created_at = 1,
+                                          .info = VideoInfo(),
+                                          .state = DownloadState::kAdded}};
+
+    Database db_{Database::get_temp(QString::fromStdString(test_name()))};
 
     VideoListModel model_{db_};
 };
@@ -67,94 +76,58 @@ class VideoListModelTest : public testing::Test {
 TEST_F(VideoListModelTest, AppendVideos) {
     EXPECT_EQ(model_.rowCount(), 0);
 
-    model_.appendVideos(parts_ascending_);
+    model_.appendVideos(parts_asc_);
 
-    EXPECT_EQ(model_.rowCount(), parts_ascending_.size());
+    EXPECT_EQ(model_.rowCount(), parts_asc_.size());
 
-    for (qsizetype i = 0; i < model_.rowCount(); ++i) {
-        const auto index = model_.index(i);
-
-        bool ok = false;
-        const qint64 created_at =
-            model_.data(index, kCreatedAtRole).toLongLong(&ok);
-        EXPECT_TRUE(ok);
-
-        const qint64 expected_created_at = parts_ascending_[i].created_at;
-
-        EXPECT_EQ(created_at, expected_created_at)
-            << "Videos are in an unexpected order";
+    {
+        SCOPED_TRACE("");
+        EXPECT_EQ_CREATED_AT(model_, parts_asc_);
     }
 }
 
 TEST_F(VideoListModelTest, PrependVideos) {
     EXPECT_EQ(model_.rowCount(), 0);
 
-    model_.prependVideos(parts_ascending_);
+    model_.prependVideos(parts_asc_);
 
-    EXPECT_EQ(model_.rowCount(), parts_ascending_.size());
+    EXPECT_EQ(model_.rowCount(), parts_asc_.size());
 
-    for (qsizetype i = 0; i < model_.rowCount(); ++i) {
-        const auto index = model_.index(i);
-
-        bool ok = false;
-        const qint64 created_at =
-            model_.data(index, kCreatedAtRole).toLongLong(&ok);
-        EXPECT_TRUE(ok);
-
-        const qint64 expected_created_at = parts_ascending_[i].created_at;
-
-        EXPECT_EQ(created_at, expected_created_at)
-            << "Videos are in an unexpected order";
+    {
+        SCOPED_TRACE("");
+        EXPECT_EQ_CREATED_AT(model_, parts_asc_);
     }
 }
 
 TEST_F(VideoListModelTest, AppendThenPrependVideos) {
     EXPECT_EQ(model_.rowCount(), 0);
 
-    model_.appendVideos(parts_ascending_);
-    model_.prependVideos(parts_descending_);
+    model_.appendVideos(parts_asc_);
+    model_.prependVideos(parts_desc_);
 
-    const auto expected_parts = parts_descending_ + parts_ascending_;
+    const auto expected_parts = parts_desc_ + parts_asc_;
 
     EXPECT_EQ(model_.rowCount(), expected_parts.size());
 
-    for (qsizetype i = 0; i < model_.rowCount(); ++i) {
-        const auto index = model_.index(i);
-
-        bool ok = false;
-        const qint64 created_at =
-            model_.data(index, kCreatedAtRole).toLongLong(&ok);
-        EXPECT_TRUE(ok);
-
-        const qint64 expected_created_at = expected_parts[i].created_at;
-
-        EXPECT_EQ(created_at, expected_created_at)
-            << "Videos are in an unexpected order";
+    {
+        SCOPED_TRACE("");
+        EXPECT_EQ_CREATED_AT(model_, expected_parts);
     }
 }
 
 TEST_F(VideoListModelTest, PrependThenAppendVideos) {
     EXPECT_EQ(model_.rowCount(), 0);
 
-    model_.prependVideos(parts_ascending_);
-    model_.appendVideos(parts_descending_);
+    model_.prependVideos(parts_asc_);
+    model_.appendVideos(parts_desc_);
 
-    const auto expected_parts = parts_ascending_ + parts_descending_;
+    const auto expected_parts = parts_asc_ + parts_desc_;
 
     EXPECT_EQ(model_.rowCount(), expected_parts.size());
 
-    for (qsizetype i = 0; i < model_.rowCount(); ++i) {
-        const auto index = model_.index(i);
-
-        bool ok = false;
-        const qint64 created_at =
-            model_.data(index, kCreatedAtRole).toLongLong(&ok);
-        EXPECT_TRUE(ok);
-
-        const qint64 expected_created_at = expected_parts[i].created_at;
-
-        EXPECT_EQ(created_at, expected_created_at)
-            << "Videos are in an unexpected order";
+    {
+        SCOPED_TRACE("");
+        EXPECT_EQ_CREATED_AT(model_, expected_parts);
     }
 }
 
@@ -169,9 +142,9 @@ TEST_F(VideoListModelTest, RemoveAllVideosOnEmptyModel) {
 TEST_F(VideoListModelTest, RemoveAllVideos) {
     EXPECT_EQ(model_.rowCount(), 0);
 
-    model_.appendVideos(parts_same_);
+    model_.appendVideos(parts_);
 
-    EXPECT_EQ(model_.rowCount(), parts_same_.size());
+    EXPECT_EQ(model_.rowCount(), parts_.size());
 
     model_.removeAllVideos();
 

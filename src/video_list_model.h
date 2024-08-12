@@ -46,7 +46,16 @@ class VideoListModel : public QAbstractListModel {
 
     Q_INVOKABLE void removeAllVideos();
 
-   public slots:  // NOLINT(readability-redundant-access-specifiers)
+    Q_INVOKABLE void downloadVideo(int row);
+
+    Q_INVOKABLE void downloadAllVideos();
+
+    Q_INVOKABLE void cancelAllDownloads();
+
+   signals:
+    void requestDownloadVideo(ManagedVideo*);
+
+   public slots:
     void prependVideos(QList<ManagedVideoParts>);
 
     void appendVideos(QList<ManagedVideoParts>);

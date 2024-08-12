@@ -33,8 +33,6 @@ class Downloader : public QObject {
 
     Q_INVOKABLE void fetch_info(const QString& url);
 
-    Q_INVOKABLE void enqueue_video(ManagedVideo* video);
-
    signals:
     void isFetchingChanged();
 
@@ -50,7 +48,10 @@ class Downloader : public QObject {
 
     void fetchInfoBadParse();
 
-   public:
+   public slots:
+    void enqueue_video(ManagedVideo* video);
+
+   public:  // NOLINT(readability-redundant-access-specifiers)
     bool is_fetching() const;
 
     bool is_downloading() const;

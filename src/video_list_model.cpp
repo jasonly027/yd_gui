@@ -8,6 +8,7 @@
 #include <QVariant>
 #include <QtAlgorithms>
 
+#include "database.h"
 #include "video.h"
 
 namespace yd_gui {
@@ -57,7 +58,7 @@ QHash<int, QByteArray> VideoListModel::roleNames() const {
     return kRoles;
 }
 
-Q_INVOKABLE void VideoListModel::removeVideo(int row) {
+void VideoListModel::removeVideo(int row) {
     if (row < 0 || row >= videos_.size()) return;
 
     beginRemoveRows(QModelIndex(), row, row);
@@ -71,7 +72,7 @@ Q_INVOKABLE void VideoListModel::removeVideo(int row) {
     video->deleteLater();
 }
 
-Q_INVOKABLE void VideoListModel::removeAllVideos() {
+void VideoListModel::removeAllVideos() {
     if (videos_.empty()) return;
 
     beginRemoveRows(QModelIndex(), 0, videos_.size() - 1);
@@ -84,6 +85,24 @@ Q_INVOKABLE void VideoListModel::removeAllVideos() {
     for (auto* const video : videos) {
         emit video->requestCancelDownload();
         video->deleteLater();
+    }
+}
+
+void VideoListModel::downloadVideo(int row) {
+    if (row < 0 || row >= videos_.size()) return;
+
+    emit requestDownloadVideo(videos_[row]);
+}
+
+void VideoListModel::downloadAllVideos() {
+    for (auto* const video : videos_) {
+        emit requestDownloadVideo(video);
+    }
+}
+
+void VideoListModel::cancelAllDownloads() {
+    for (auto* const video : videos_) {
+        emit video->requestCancelDownload();
     }
 }
 
