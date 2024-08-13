@@ -1,15 +1,13 @@
 #include "database.h"
 
+#include <qdatetime.h>
+#include <qobject.h>
 #include <qsqldatabase.h>
+#include <qsqlerror.h>
 #include <qsqlquery.h>
 #include <qtypes.h>
 
-#include <QDateTime>
-#include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
 #include <QStringBuilder>
-#include <QtTypes>
 #include <algorithm>
 #include <optional>
 
@@ -18,8 +16,6 @@
 namespace yd_gui {
 
 using std::nullopt, std::optional;
-
-Database::~Database() { QSqlDatabase::removeDatabase(connection_name_); }
 
 Database& Database::get() {
     static Database db;

@@ -1,16 +1,13 @@
 #pragma once
 
+#include <qlist.h>
+#include <qobject.h>
 #include <qsqldatabase.h>
+#include <qsqlerror.h>
 #include <qsqlquery.h>
+#include <qstring.h>
 #include <qtmetamacros.h>
 #include <qtypes.h>
-
-#include <QList>
-#include <QObject>
-#include <QSqlQuery>
-#include <QString>
-#include <QtSql/QSqlDatabase>
-#include <QtTypes>
 
 #include "video.h"
 
@@ -20,8 +17,6 @@ class Database : public QObject {
     Q_OBJECT
 
    public:
-    ~Database() override;
-
     static Database& get();
 
     static Database get_temp(const QString& connection_name);

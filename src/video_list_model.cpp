@@ -1,11 +1,11 @@
 #include "video_list_model.h"
 
 #include <qabstractitemmodel.h>
+#include <qbytearray.h>
 #include <qobject.h>
 #include <qtmetamacros.h>
+#include <qvariant.h>
 
-#include <QByteArray>
-#include <QVariant>
 #include <QtAlgorithms>
 
 #include "database.h"

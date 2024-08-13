@@ -1,9 +1,9 @@
 #include "video.h"
 
+#include <qdebug.h>
 #include <qtmetamacros.h>
 #include <qvariant.h>
 
-#include <QDebug>
 #include <QtLogging>
 #include <iostream>
 #include <utility>

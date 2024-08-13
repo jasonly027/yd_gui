@@ -1,14 +1,14 @@
 #pragma once
 
+#include <qabstractanimation.h>
+#include <qhash.h>
+#include <qlist.h>
 #include <qnamespace.h>
+#include <qobject.h>
 #include <qtmetamacros.h>
 #include <qtypes.h>
+#include <qvariant.h>
 
-#include <QAbstractListModel>
-#include <QHash>
-#include <QList>
-#include <QObject>
-#include <QVariant>
 #include <QtQmlIntegration>
 
 #include "database.h"

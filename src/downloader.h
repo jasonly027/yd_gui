@@ -1,11 +1,11 @@
 #pragma once
 
+#include <qlist.h>
+#include <qobject.h>
+#include <qprocess.h>
 #include <qstringview.h>
 #include <qtmetamacros.h>
 
-#include <QList>
-#include <QObject>
-#include <QProcess>
 #include <QSharedPointer>
 #include <QtQml>
 #include <QtQmlIntegration>

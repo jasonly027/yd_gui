@@ -1,12 +1,12 @@
 #pragma once
 
+#include <qlist.h>
+#include <qobject.h>
+#include <qstring.h>
 #include <qtmetamacros.h>
+#include <qtypes.h>
 
-#include <QList>
-#include <QObject>
-#include <QString>
 #include <QtQmlIntegration>
-#include <QtTypes>
 #include <cstddef>
 #include <ostream>
 
@@ -23,10 +23,15 @@ class VideoFormat {
    public:
     explicit VideoFormat(QString format_id, QString container, quint32 width,
                          quint32 height, float fps);
+
     explicit VideoFormat() = default;
+
     VideoFormat(const VideoFormat& other) = default;
+
     VideoFormat& operator=(const VideoFormat& other) = default;
+
     VideoFormat(VideoFormat&& other) = default;
+
     VideoFormat& operator=(VideoFormat&& other) = default;
 
     const QString& format_id() const;
@@ -136,18 +141,18 @@ class ManagedVideo : public QObject {
 
     ManagedVideo& operator=(ManagedVideo&& other) = delete;
 
-   public slots:  // NOLINT(readability-redundant-access-specifiers)
-    void setProgress(QString progress);
-    void setSelectedFormat(QString selected_format);
-    void setState(DownloadState state);
-
    signals:
     void progressChanged();
     void selectedFormatChanged();
     void stateChanged(DownloadState state);
     void requestCancelDownload();
 
-   public:
+   public slots:
+    void setProgress(QString progress);
+    void setSelectedFormat(QString selected_format);
+    void setState(DownloadState state);
+
+   public:  // NOLINT(readability-redundant-access-specifiers)
     qint64 id() const;
     qint64 created_at() const;
     const VideoInfo& info() const;
