@@ -1,19 +1,7 @@
-#include <QtCore/qobjectdefs.h>
-#include <qnamespace.h>
-
-#include <QCoreApplication>
-#include <QGuiApplication>
-#include <QObject>
-#include <QQmlApplicationEngine>
+#include "application.h"
 
 int main(int argc, char* argv[]) {
-    QGuiApplication app(argc, argv);
+    yd_gui::Application app(argc, argv);
 
-    QQmlApplicationEngine engine;
-    QObject::connect(
-        &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
-        []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
-    engine.loadFromModule("yd_gui", "Main");
-
-    return QGuiApplication::exec();
+    return app.exec();
 }

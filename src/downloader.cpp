@@ -1,23 +1,20 @@
 #include "downloader.h"
 
 #include <qdebug.h>
+#include <qdir.h>
 #include <qfuturewatcher.h>
+#include <qlist.h>
 #include <qobject.h>
+#include <qoverload.h>
 #include <qprocess.h>
+#include <qregularexpression.h>
 #include <qrunnable.h>
+#include <qstandardpaths.h>
+#include <qstringbuilder.h>
 #include <qstringview.h>
 #include <qthreadpool.h>
 #include <qtmetamacros.h>
 
-#include <QDebug>
-#include <QDir>
-#include <QList>
-#include <QObject>
-#include <QOverload>
-#include <QProcess>
-#include <QRegularExpression>
-#include <QStandardPaths>
-#include <QStringBuilder>
 #include <QtConcurrent/QtConcurrent>
 #include <QtQmlIntegration>
 #include <cassert>
@@ -28,7 +25,7 @@
 #include <tuple>
 #include <utility>
 
-#include "database.h"
+#include "application_settings.h"
 #include "video.h"
 
 namespace yd_gui {
@@ -36,10 +33,7 @@ namespace yd_gui {
 using nlohmann::basic_json, nlohmann::json, std::nullopt, std::string,
     std::tuple, std::optional;
 
-Downloader::Downloader(QObject* parent) : QObject(parent) {
-    QObject::connect(this, &Downloader::infoPushed, &Database::get(),
-                     &Database::addVideo);
-}
+Downloader::Downloader(QObject* parent) : QObject(parent) {}
 
 static constexpr auto kProgram = "yt-dlp";
 
@@ -260,12 +254,7 @@ QProcess* Downloader::create_generic_process() {
     auto* yt_dlp = new QProcess();
 
     yt_dlp->setProgram(kProgram);
-
-    if (QString dir =
-            QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
-        QDir(dir).exists()) {
-        yt_dlp->setWorkingDirectory(dir);
-    }
+    yt_dlp->setWorkingDirectory(ApplicationSettings::get().downloadDir());
 
     QObject::connect(yt_dlp, &QProcess::finished, yt_dlp,
                      &QObject::deleteLater);
