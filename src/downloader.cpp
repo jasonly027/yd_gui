@@ -254,7 +254,8 @@ QProcess* Downloader::create_generic_process() {
     auto* yt_dlp = new QProcess();
 
     yt_dlp->setProgram(kProgram);
-    yt_dlp->setWorkingDirectory(ApplicationSettings::get().downloadDir());
+    yt_dlp->setWorkingDirectory(
+        ApplicationSettings::get().downloadDirValidated().toLocalFile());
 
     QObject::connect(yt_dlp, &QProcess::finished, yt_dlp,
                      &QObject::deleteLater);

@@ -17,6 +17,6 @@ CPMAddPackage(
     "JSON_BuildTests OFF"
     "JSON_ImplicitConversions OFF"
 )
-find_package(Qt6 6.6...6.7.2 REQUIRED COMPONENTS Quick Sql Test QuickTest)
+find_package(Qt6 6.6...6.7.2 REQUIRED COMPONENTS Quick Gui Sql Test QuickTest)
 add_compile_definitions(QUICK_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}/tests/qml")
 qt_standard_project_setup(REQUIRES 6.5)

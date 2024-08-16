@@ -1,56 +1,79 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import YdGui as Yd
 
-Window {
-    height: 480
-    title: qsTr("Hello World")
+ApplicationWindow {
+    id: root
+
+    maximumHeight: 900
+    maximumWidth: 700
+    minimumHeight: 900
+    minimumWidth: 700
     visible: true
-    width: 640
 
-    Rectangle {
-        id: spinningBox
-
-        anchors.centerIn: parent
-        color: "blue"
-        height: 100
-        width: 100
-
-        NumberAnimation on rotation {
-            duration: 2000
-            from: 0
-            loops: Animation.Infinite
-            to: 360
-        }
-
-        MouseArea {
-            anchors.fill: parent
-
-            // onClicked: Downloader.fetch_info("https://www.youtube.com/watch?v=_9GfTyIcDLU")
-            onClicked: Yd.Downloader.test_enqueue()
-        }
-    }
-
-    // Connections {
-    //     target: Downloader
-
-    //     function onStandardOutputPushed(data) {
-    //         console.log("COUT", data);
-    //     }
-
-    //     function onStandardErrorPushed(data) {
-    //         console.log("[CERR]", data);
-    //     }
+    color: Yd.Theme.bg
+    // header: Rectangle {
+    //     color: "gray"
+    //     height: 400
+    //     width: root.width
     // }
-    ListView {
-        width: 300
-        height: 500
-        model: Yd.VideoListModel
+    menuBar: Pane {
+        focusPolicy: Qt.ClickFocus
+        implicitHeight: menuBar.implicitHeight
+        implicitWidth: menuBar.implicitWidth
 
-        delegate: Text {
-            text: "This video is " + model.info.title
-            font.pointSize: 20
+        background: Rectangle {
+            color: Yd.Theme.bg
+        }
 
+        ColumnLayout {
+            id: menuBar
+
+            spacing: 20
+
+            Item {
+                id: menuBarTopSpacer
+
+            }
+            Yd.InputUrl {
+                id: inputUrl
+
+                Layout.alignment: Qt.AlignCenter
+                Layout.minimumWidth: implicitWidth
+                Layout.preferredWidth: root.width * 0.8
+            }
+            Item {
+                id: queueButtonsAndSettings
+
+                Layout.preferredWidth: root.width
+                implicitHeight: queueButtons.height
+
+                RowLayout {
+                    id: queueButtons
+
+                    anchors.centerIn: parent
+                    spacing: 10
+
+                    Yd.RaisedButton {
+                        color: Yd.Theme.primary
+                        id: downloadAll
+                        text: qsTr("Download All")
+                    }
+                    Yd.RaisedButton {
+                        color: Yd.Theme.cancelBtn
+                        id: cancelAll
+                        text: qsTr("Cancel All")
+                    }
+                }
+                Yd.SettingsDrawer {
+                    id: settingsDrawer
+
+                    drawerWidth: Math.min(root.width, drawerImplicitWidth)
+                    anchors.right: queueButtonsAndSettings.right
+                    anchors.verticalCenter: queueButtonsAndSettings.verticalCenter
+                }
+            }
         }
     }
 }

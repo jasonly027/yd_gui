@@ -1,11 +1,14 @@
 #include "application.h"
 
 #include <QtGui/qguiapplication.h>
+#include <qfontdatabase.h>
+#include <qlogging.h>
 #include <qnamespace.h>
 #include <qobject.h>
 #include <qobjectdefs.h>
 #include <qqmlapplicationengine.h>
 #include <qqmlcontext.h>
+#include <qstringliteral.h>
 
 #include "application_settings.h"
 #include "database.h"
@@ -20,9 +23,26 @@ static QGuiApplication* create_application(int& argc, char** argv) {
     return new QGuiApplication(argc, argv);
 }
 
+static void add_fonts() {
+    const QList<QString> fonts = {
+        QStringLiteral(":/fonts/NotoSans-Italic-VariableFont.ttf"),
+        QStringLiteral(":/fonts/NotoSans-VariableFont.ttf"),
+        QStringLiteral(":/fonts/Typicons.ttf")};
+
+    for (const auto& font : fonts) {
+        if (QFontDatabase::addApplicationFont(font) == -1) {
+            qWarning() << "Failed to add font: " << font;
+        }
+    }
+}
+
 Application::Application(int& argc, char** argv)
     : application_(create_application(argc, argv)),
       engine_(new QQmlApplicationEngine) {
+    add_fonts();
+
+    application_->setFont(QStringLiteral("Noto Sans"));
+
     engine_->rootContext()->setContextProperty("_settings",
                                                &ApplicationSettings::get());
     engine_->rootContext()->setContextProperty("_database", &Database::get());

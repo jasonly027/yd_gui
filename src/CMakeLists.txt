@@ -1,5 +1,15 @@
 qt_add_library(${PROJECT_NAME}_lib STATIC)
 
+set(qml_singletons
+    qml/Theme.qml
+    qml/Constants.qml
+)
+
+set_source_files_properties(${qml_singletons}
+    PROPERTIES
+    QT_QML_SINGLETON_TYPE TRUE
+)
+
 qt_add_qml_module(${PROJECT_NAME}_lib
     URI "YdGui"
 
@@ -12,11 +22,38 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     database.cpp database.h
     application.cpp application.h
     application_settings.cpp application_settings.h
+
+    QML_FILES
+    qml/InputUrl.qml
+    qml/Theme.qml
+    qml/RaisedButton.qml
+    qml/SettingsDrawer.qml
+    qml/SettingsContent.qml
+    qml/Constants.qml
+    qml/InputDownloadDir.qml
+    qml/DropShadow.qml
+    qml/Header.qml
+    qml/ThemePicker.qml
+)
+
+qt_add_resources(${PROJECT_NAME}_lib "fonts"
+    PREFIX "/"
+    FILES
+    fonts/NotoSans-VariableFont.ttf
+    fonts/NotoSans-Italic-VariableFont.ttf
+    fonts/Typicons.ttf
+)
+
+qt_add_resources(${PROJECT_NAME}_lib "images"
+    PREFIX "/"
+    FILES
+    images/darkPurple.svg
+    images/lightPurple.svg
 )
 
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(${PROJECT_NAME}_lib PRIVATE nlohmann_json::nlohmann_json Qt6::Sql)
+target_link_libraries(${PROJECT_NAME}_lib PRIVATE nlohmann_json::nlohmann_json Qt6::Gui Qt6::Sql)
 
 target_compile_definitions(${PROJECT_NAME}_lib
     PRIVATE
