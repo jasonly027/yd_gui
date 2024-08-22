@@ -23,8 +23,6 @@ static QUrl default_download_dir() {
                               : QCoreApplication::applicationDirPath();
 }
 
-// CREATE AN Q_PROP FOR THIS BC InputDownloadDir.qml:21 only calls this function
-// once
 QUrl ApplicationSettings::downloadDirValidated() {
     QUrl dir = downloadDir();
 

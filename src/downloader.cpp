@@ -226,11 +226,13 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
             const QString data = yt_dlp->readAllStandardOutput();
 
             const QRegularExpression re(
-                R"#(^( (?<percent>100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?%)\n)+$)#");
+                R"#(^( (?<percent>100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)%\n)+$)#");
             const auto match = re.match(data);
 
             if (match.hasMatch()) {
-                video.setProgress(match.captured("percent"));
+                bool ok = false;
+                const float progress = match.captured("percent").toFloat(&ok);
+                if (ok) video.setProgress(progress);
             }
         });
 
@@ -239,7 +241,7 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
         &video, [&video](int exit_code, QProcess::ExitStatus exit_status) {
             if (exit_status == QProcess::ExitStatus::NormalExit &&
                 exit_code == 0) {
-                video.setProgress("100%");
+                video.setProgress(100.0);
                 video.setState(DownloadState::kComplete);
             }
         });
@@ -260,11 +262,10 @@ QProcess* Downloader::create_generic_process() {
     QObject::connect(yt_dlp, &QProcess::finished, yt_dlp,
                      &QObject::deleteLater);
 
-    QObject::connect(yt_dlp, &QProcess::readyReadStandardError, this,
-                     [yt_dlp, this] {
-                         QString data = yt_dlp->readAllStandardError();
-                         emit this->standardErrorPushed(std::move(data));
-                     });
+    QObject::connect(
+        yt_dlp, &QProcess::readyReadStandardError, this, [yt_dlp, this] {
+            emit this->standardErrorPushed(yt_dlp->readAllStandardError());
+        });
 
     QObject::connect(
         yt_dlp, &QProcess::errorOccurred, this,

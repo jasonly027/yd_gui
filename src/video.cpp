@@ -114,7 +114,7 @@ ManagedVideo::ManagedVideo(ManagedVideoParts parts, QObject* parent)
     : ManagedVideo(parts.id, parts.created_at, std::move(parts.info),
                    parts.state, parent) {}
 
-void ManagedVideo::setProgress(QString progress) {
+void ManagedVideo::setProgress(float progress) {
     if (progress == progress_) return;
     progress_ = std::move(progress);
     emit progressChanged();
@@ -202,7 +202,7 @@ qint64 ManagedVideo::created_at() const { return created_at_; }
 
 const VideoInfo& ManagedVideo::info() const { return info_; }
 
-QString ManagedVideo::progress() const { return progress_; }
+float ManagedVideo::progress() const { return progress_; }
 
 const QString& ManagedVideo::selected_format() const {
     return selected_format_;

@@ -339,7 +339,7 @@ TEST_F(DownloaderTest, EnqueueOneVideo) {
 
     EXPECT_EQ(state_spy.count(), 3) << PrintToString(extract_states(state_spy));
 
-    EXPECT_EQ(zoo_video_.progress(), "100%");
+    EXPECT_EQ(zoo_video_.progress(), 100.0);
 
     EXPECT_THAT(
         extract_states(state_spy),
