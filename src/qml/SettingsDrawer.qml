@@ -8,10 +8,16 @@ Item {
 
     readonly property bool __transitionRunning: (openAnim.running || closeAnim.running)
     property color backgroundColor: Yd.Theme.settingsBg
-    property alias drawerImplicitWidth: drawer.implicitWidth
+    property alias drawerHeight: drawer.height
+    readonly property alias drawerImplicitHeight: drawer.implicitHeight
+    readonly property alias drawerImplicitWidth: drawer.implicitWidth
     property alias drawerWidth: drawer.width
+    readonly property int fullImplicitHeight: implicitHeight + drawerImplicitHeight
+    readonly property int fullImplicitWidth: implicitWidth + drawerImplicitWidth
+    property int maxDrawerHeight: drawerHeight
     property int transitionDuration: 500
 
+    // Implicit dimensions are only the tab used to open the drawer
     implicitHeight: tab.implicitHeight
     implicitWidth: tab.implicitWidth
     objectName: "settingsDrawer"
@@ -73,9 +79,9 @@ Item {
             bottomPadding: 15
             enabled: !root.__transitionRunning
             font.family: "typicons"
-            font.pixelSize: Yd.Constants.iconSize
+            font.pixelSize: Yd.Constants.iconSizeLarge
             hoverEnabled: true
-            palette.buttonText: hovered ? Yd.Theme.primary : Yd.Theme.neutral
+            palette.buttonText: (hovered || drawer.opened) ? Yd.Theme.primary : Yd.Theme.neutral
             text: "\ue04f"
             topPadding: 15
 
@@ -101,6 +107,7 @@ Item {
             id: patchCrevice
 
             color: root.backgroundColor
+            enabled: false
             implicitHeight: tab.implicitHeight
             implicitWidth: tab.implicitWidth
             visible: root.__transitionRunning
@@ -110,22 +117,47 @@ Item {
         Popup {
             id: drawer
 
-            closePolicy: Popup.CloseOnPressOutsideParent | Popup.CloseOnReleaseOutsideParent | Popup.CloseOnEscape
+            bottomPadding: 0
+            closePolicy: Popup.CloseOnPressOutsideParent | Popup.CloseOnEscape
             enabled: !root.__transitionRunning
-            padding: 30
+            height: implicitHeight > root.maxDrawerHeight ? root.maxDrawerHeight : implicitHeight
+            leftPadding: Math.round(Yd.Constants.boxPadding * (1 / 3))
+            rightPadding: Math.round(Yd.Constants.boxPadding * (1 / 3))
+            topPadding: 0
             x: tab.width
 
             background: Rectangle {
                 id: drawerBackground
 
                 anchors.fill: parent
-                border.color: Qt.darker(backgroundColor, 1.1)
-                border.width: 1
                 bottomLeftRadius: Yd.Constants.boxRadius
                 bottomRightRadius: Yd.Constants.boxRadius
                 color: root.backgroundColor
+
+                border {
+                    color: Qt.darker(root.backgroundColor, 1.1)
+                    width: 2
+                }
             }
-            contentItem: SettingsContent {
+            contentItem: ScrollView {
+                id: scrollView
+
+                leftPadding: Math.round(Yd.Constants.boxPadding * (2 / 3))
+                rightPadding: Math.round(Yd.Constants.boxPadding * (2 / 3))
+
+                Flickable {
+                    id: flickable
+
+                    boundsBehavior: Flickable.StopAtBounds
+                    clip: true
+                    contentHeight: settingsContent.implicitHeight
+                    contentWidth: settingsContent.implicitWidth
+
+                    SettingsContent {
+                        id: settingsContent
+
+                    }
+                }
             }
             exit: Transition {
                 PauseAnimation {

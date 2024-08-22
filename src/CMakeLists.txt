@@ -34,6 +34,15 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     qml/DropShadow.qml
     qml/Header.qml
     qml/ThemePicker.qml
+    qml/ClearHistoryDialog.qml
+    qml/VideosListContent.qml
+    qml/VideoDelegate.qml
+    qml/ThemeDelegate.qml
+    qml/TitleAudioText.qml
+    qml/TextTrailingIcon.qml
+    qml/LinkText.qml
+    qml/FormatComboBox.qml
+    qml/FormatDelegate.qml
 )
 
 qt_add_resources(${PROJECT_NAME}_lib "fonts"

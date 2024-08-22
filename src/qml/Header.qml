@@ -3,43 +3,35 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import YdGui as Yd
 
-Item {
+ColumnLayout {
     id: root
 
     property color color: Yd.Theme.neutral
     property alias lineWidth: underline.width
     property alias pixelSize: title.font.pixelSize
-    required property string text
+    property alias text: title.text
 
-    implicitHeight: columnLayout.implicitHeight
-    implicitWidth: columnLayout.implicitWidth
     objectName: "header"
+    spacing: 5
 
-    ColumnLayout {
-        id: columnLayout
+    Text {
+        id: title
 
-        spacing: 5
+        Layout.alignment: Qt.AlignCenter
+        color: root.color
 
-        Text {
-            id: title
-
-            Layout.alignment: Qt.AlignCenter
-            color: root.color
-            text: root.text
-
-            font {
-                pixelSize: Qt.application.font.pixelSize * 1.2
-                weight: Font.DemiBold
-            }
+        font {
+            pixelSize: Qt.application.font.pixelSize * 1.1
+            weight: Font.DemiBold
         }
-        Rectangle {
-            id: underline
+    }
+    Rectangle {
+        id: underline
 
-            Layout.alignment: Qt.AlignCenter
-            color: root.color
-            implicitHeight: 2
-            implicitWidth: title.implicitWidth + 150
-            radius: 2
-        }
+        Layout.alignment: Qt.AlignCenter
+        color: root.color
+        implicitHeight: 2
+        implicitWidth: title.implicitWidth + 150
+        radius: 2
     }
 }

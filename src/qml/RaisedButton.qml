@@ -72,10 +72,13 @@ Item {
             id: button
 
             bottomPadding: 5
-            font.weight: Font.Medium
-            leftPadding: 25
-            palette.buttonText: Yd.Theme.darkMode ? "white" : "black"
-            rightPadding: 25
+            font {
+                weight: Font.Medium
+                pixelSize: Qt.application.font.pixelSize * 1.1
+            }
+            leftPadding: Yd.Constants.boxPadding
+            palette.buttonText: Yd.Theme.darkMode ? (hoverHandler.hovered ? Qt.darker("white", 1.1) : "white") : (hoverHandler.hovered ? Qt.darker("white", 6) : "black")
+            rightPadding: Yd.Constants.boxPadding
             topPadding: 5
 
             background: Rectangle {
@@ -85,6 +88,8 @@ Item {
             }
 
             HoverHandler {
+                id: hoverHandler
+
                 cursorShape: Qt.PointingHandCursor
             }
             Connections {

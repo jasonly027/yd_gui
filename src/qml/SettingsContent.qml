@@ -3,41 +3,47 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import YdGui as Yd
 
-Item {
+ColumnLayout {
     id: root
 
-    implicitHeight: columnLayout.implicitHeight
-    implicitWidth: columnLayout.implicitWidth
     objectName: "settingsContent"
+    spacing: Yd.Constants.spacing
 
-    ColumnLayout {
-        id: columnLayout
+    Item {
+        enabled: false
+    }
+    Yd.InputDownloadDir {
+        id: inputDownloadDir
 
-        spacing: 20
+        Layout.alignment: Qt.AlignCenter
+        Layout.preferredWidth: themePicker.width
+    }
+    Yd.Header {
+        id: themesHeader
 
-        Yd.InputDownloadDir {
-            id: inputDownloadDir
+        Layout.alignment: Qt.AlignCenter
+        text: qsTr("Themes")
+    }
+    Yd.ThemePicker {
+        id: themePicker
 
-            Layout.preferredWidth: themesHeader.width + 150
-            Layout.alignment: Qt.AlignCenter
+        Layout.alignment: Qt.AlignCenter
+    }
+    Yd.RaisedButton {
+        id: clearHistoryButton
+
+        Layout.alignment: Qt.AlignCenter
+        color: Yd.Theme.secondary
+        text: qsTr("Clear History")
+
+        button.onClicked: clearHistory.open()
+
+        Yd.ClearHistoryDialog {
+            id: clearHistory
+
         }
-        Yd.Header {
-            id: themesHeader
-
-            Layout.alignment: Qt.AlignCenter
-            text: qsTr("Themes")
-        }
-        Yd.ThemePicker {
-            id: themePicker
-
-            Layout.alignment: Qt.AlignCenter
-        }
-        Yd.RaisedButton {
-            id: clearHistoryButton
-
-            Layout.alignment: Qt.AlignCenter
-            color: Yd.Theme.secondary
-            text: qsTr("Clear History")
-        }
+    }
+    Item {
+        enabled: false
     }
 }

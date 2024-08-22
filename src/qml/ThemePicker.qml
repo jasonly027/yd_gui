@@ -7,7 +7,9 @@ import YdGui as Yd
 Item {
     id: root
 
-    readonly property list<string> themes: ["darkPurple", "lightPurple"]
+    // readonly property list<string> themes: ["darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple"]
+    readonly property list<string> themes: Object.keys(Yd.Theme.themes)
+    property alias columns: gridLayout.columns
 
     implicitHeight: gridLayout.implicitHeight
     implicitWidth: gridLayout.implicitWidth
@@ -16,41 +18,14 @@ Item {
     GridLayout {
         id: gridLayout
 
-        columnSpacing: 20
+        columnSpacing: Yd.Constants.spacing
         columns: 2
-        rowSpacing: 30
+        rowSpacing: Yd.Constants.spacing
 
         Repeater {
             model: root.themes
 
-            delegate: Item {
-                id: delegateRoot
-
-                required property string modelData
-
-                implicitHeight: thumbnail.height
-                implicitWidth: thumbnail.width
-
-                Image {
-                    id: thumbnail
-
-                    source: `qrc:/images/${delegateRoot.modelData}`
-                    sourceSize.width: width
-                    width: 160
-
-                    Rectangle {
-                        anchors.fill: thumbnail
-                        border.color: Yd.Theme.secondary
-                        border.width: 5
-                        radius: Yd.Constants.boxRadius
-                        color: "transparent"
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: delegateRoot
-                    onClicked: _settings.theme = modelData
-                }
+            delegate: Yd.ThemeDelegate {
             }
         }
     }

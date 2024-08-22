@@ -14,6 +14,7 @@ Item {
     readonly property color downloadingBtn: current.downloadingBtn
     readonly property color dropDownBg: current.dropDownBg
     readonly property color error: current.error
+    readonly property color formatComboBoxBg: current.formatComboBoxBg
     readonly property color iconPrimary: current.iconPrimary
     readonly property color iconSecondary: current.iconSecondary
     readonly property color inputBar: current.inputBar
@@ -35,6 +36,7 @@ Item {
             downloadingBtn: "red",
             dropDownBg: "#383a40",
             error: "#cc4125",
+            formatComboBoxBg: "#383a40",
             iconPrimary: "#ffffff",
             iconSecondary: "#919193",
             inputBar: "#999999",
@@ -58,6 +60,7 @@ Item {
             downloadingBtn: "red",
             dropDownBg: "#d9d9d9",
             error: "#cc4125",
+            formatComboBoxBg: "#d9d9d9",
             iconPrimary: "#404040",
             iconSecondary: "#6d6d6d",
             inputBar: "#eeeeee",
@@ -89,6 +92,7 @@ Item {
             required property color downloadingBtn
             required property color dropDownBg
             required property color error
+            required property color formatComboBoxBg
             required property color iconPrimary
             required property color iconSecondary
             required property color inputBar

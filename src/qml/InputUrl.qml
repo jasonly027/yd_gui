@@ -7,8 +7,6 @@ import YdGui as Yd
 Item {
     id: root
 
-    property int pixelSize: Qt.application.font.pixelSize
-
     implicitHeight: rowLayout.implicitHeight
     implicitWidth: rowLayout.implicitWidth
     objectName: "inputUrl"
@@ -25,13 +23,9 @@ Item {
             Layout.fillHeight: true
             bottomPadding: 10
             color: (input.hovered || labelMouseArea.containsMouse) ? Yd.Theme.primary : Yd.Theme.inputBarIcon
-            font {
-                pixelSize: root.pixelSize
-                weight: Font.DemiBold
-            }
             horizontalAlignment: Text.AlignHCenter
-            leftPadding: 20
-            rightPadding: 20
+            leftPadding: Yd.Constants.boxPadding
+            rightPadding: Yd.Constants.boxPadding
             text: qsTr("Link")
             topPadding: 10
             verticalAlignment: Text.AlignVCenter
@@ -49,6 +43,10 @@ Item {
                 }
             }
 
+            font {
+                pixelSize: Qt.application.font.pixelSize * 1.1
+                weight: Font.DemiBold
+            }
             MouseArea {
                 id: labelMouseArea
 
@@ -72,7 +70,7 @@ Item {
 
             font {
                 italic: input.length == 0
-                pixelSize: root.pixelSize
+                pixelSize: Qt.application.font.pixelSize
             }
         }
     }
