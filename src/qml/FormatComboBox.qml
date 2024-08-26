@@ -30,6 +30,7 @@ Item {
                         return root.formats[i];
                     }
                 }
+                console.log("Format not found")
                 return null;
             }
 

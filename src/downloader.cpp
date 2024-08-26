@@ -214,9 +214,18 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
         format_arg = video.selected_format() % "+" % format_arg;
     }
 
-    yt_dlp->setArguments({"--quiet", "--progress", "--progress-template",
-                          "%(progress._percent_str)s", "--newline", "-f",
-                          std::move(format_arg), video.info().url()});
+    QList<QString> args = {"--quiet",
+                           "--progress",
+                           "--progress-template",
+                           "%(progress._percent_str)s",
+                           "--newline",
+                           "-f",
+                           std::move(format_arg),
+                           video.info().url()};
+
+    if (video.download_thumbnail()) args << "--write-thumbnail";
+
+    yt_dlp->setArguments(args);
 
     QObject::connect(&video, &ManagedVideo::requestCancelDownload, yt_dlp,
                      &QProcess::kill);

@@ -37,7 +37,7 @@ QUrl ApplicationSettings::downloadDirValidated() {
     return default_download_dir();
 }
 
-QUrl ApplicationSettings::downloadDir() {
+QUrl ApplicationSettings::downloadDir() const {
     return contains("downloadDir") ? value("downloadDir").toUrl()
                                    : default_download_dir();
 }
@@ -52,11 +52,15 @@ void ApplicationSettings::setDownloadDir(const QUrl& dir) {
     emit downloadDirChanged();
 }
 
-QString ApplicationSettings::downloadDirStr() {
+QString ApplicationSettings::downloadDirStr() const {
     return downloadDir().toLocalFile();
 }
 
 static QString default_theme() { return "darkPurple"; }
+
+QString ApplicationSettings::theme() const {
+    return contains("theme") ? value("theme").toString() : default_theme();
+}
 
 void ApplicationSettings::setTheme(const QString& theme) {
     const QString current_theme = value("theme", default_theme()).toString();
@@ -67,8 +71,21 @@ void ApplicationSettings::setTheme(const QString& theme) {
     emit themeChanged();
 }
 
-QString ApplicationSettings::theme() const {
-    return contains("theme") ? value("theme").toString() : default_theme();
+static bool default_download_thumbnail() { return false; }
+
+bool ApplicationSettings::downloadThumbnail() const {
+    return contains("downloadThumbnail") ? value("downloadThumbnail").toBool()
+                                         : default_download_thumbnail();
+}
+
+void ApplicationSettings::setDownloadThumbnail(bool val) {
+    const bool current_download_thumbnail =
+        value("downloadThumbnail", default_download_thumbnail()).toBool();
+
+    if (val == current_download_thumbnail) return;
+
+    setValue("downloadThumbnail", val);
+    emit downloadThumbnailChanged();
 }
 
 ApplicationSettings::ApplicationSettings(QObject* parent) : QSettings(parent) {}

@@ -7,24 +7,33 @@ Item {
     id: root
 
     required property int createdAt
+    required property bool downloadThumbnail
+    required property int index
     required property Yd.videoInfo info
-    required property string progress
+    required property real progress
     required property string selectedFormat
+    required property int state
 
-    implicitHeight: videoCardBg.implicitHeight
-    implicitWidth: videoCardBg.implicitWidth
+    implicitHeight: columnLayout.implicitHeight
+    implicitWidth: columnLayout.implicitWidth
 
     ColumnLayout {
+        id: columnLayout
+
+        anchors.fill: root
+        spacing: 0
 
         Rectangle {
             id: videoCardBg
 
-            anchors.fill: root
+            Layout.fillWidth: true
+            Layout.minimumWidth: 0
             color: Yd.Theme.videoCardBg
             implicitHeight: videoCard.implicitHeight + (videoCard.anchors.margins * 2)
             implicitWidth: videoCard.implicitWidth
             objectName: "videoDelegate"
-            radius: Yd.Constants.boxRadius
+            topLeftRadius: Yd.Constants.boxRadius
+            topRightRadius: Yd.Constants.boxRadius
 
             Item {
                 id: videoCard
@@ -49,16 +58,30 @@ Item {
                         asynchronous: true
                         source: root.info.thumbnail
                         sourceSize.height: rowLayout.implicitHeight
+                        visible: root.info.thumbnail !== ""
 
                         Label {
                             id: secondsText
 
                             color: Yd.Theme.darkMode ? "white" : "black"
-                            text: root.info.seconds
+                            leftPadding: 3
+                            rightPadding: 3
+                            text: {
+                                const secsInAHour = 3600;
+                                const secsInAMinute = 60;
+                                const hrs = Math.floor(root.info.seconds / secsInAHour);
+                                const mins = Math.floor((root.info.seconds - (hrs * secsInAHour)) / secsInAMinute);
+                                const secs = root.info.seconds - (hrs * secsInAHour) - (mins * secsInAMinute);
+                                if (hrs !== 0)
+                                    return `${hrs}:${mins}:${secs}`;
+                                return `${mins}:${secs}`;
+                            }
+                            visible: root.info.seconds > 0
 
                             background: Rectangle {
                                 color: Yd.Theme.darkMode ? "black" : "white"
-                                opacity: 0.5
+                                opacity: 0.6
+                                radius: Yd.Constants.boxRadius / 2
                             }
 
                             anchors {
@@ -71,6 +94,7 @@ Item {
                     ColumnLayout {
                         id: infosLayout
 
+                        Layout.minimumHeight: removeAndDownloadItem.Layout.minimumHeight
                         spacing: 10
 
                         ColumnLayout {
@@ -82,8 +106,7 @@ Item {
                                 id: titleAudioText
 
                                 Layout.fillWidth: true
-                                audio: root.info.audioAvailable
-                                text: root.info.title
+                                text: root.info.title !== "" ? root.info.title : "Untitled"
                             }
                             Text {
                                 id: authorText
@@ -91,35 +114,54 @@ Item {
                                 Layout.fillWidth: true
                                 color: Yd.Theme.neutral
                                 elide: Text.ElideRight
-                                text: root.info.author
+                                text: root.info.author !== "" ? root.info.author : "No Author"
                             }
-                            Yd.LinkText {
-                                id: linkText
+                            Loader {
+                                id: linkTextLoader
 
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: implicitWidth
-                                text: root.info.url
+                                active: visible
+                                visible: root.info.url !== ""
+
+                                sourceComponent: Yd.LinkText {
+                                    id: linkText
+
+                                    text: root.info.url
+                                }
                             }
                         }
                         RowLayout {
                             id: formatThumbnailSelectorLayout
 
-                            Yd.FormatComboBox {
-                                id: formatComboxBox
+                            spacing: 10
+
+                            Loader {
+                                id: formatComboBoxLoader
 
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: implicitWidth
-                                formats: root.info.formats
-                                selectedFormat: root.selectedFormat
+                                active: visible
+                                visible: root.info.formats.length > 0
+
+                                sourceComponent: Yd.FormatComboBox {
+                                    id: formatComboxBox
+
+                                    formats: root.info.formats
+                                    selectedFormat: root.selectedFormat
+                                }
                             }
                             CheckBox {
-                                id: thumbnailCheckbox
+                                id: thumbnailCheckBox
 
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: implicitWidth
                                 Layout.minimumWidth: 0
+                                checked: root.downloadThumbnail
                                 palette.windowText: Yd.Theme.darkMode ? "white" : "black"
                                 text: qsTr("Download Thumbnail")
+
+                                onCheckedChanged: root.downloadThumbnail = checked
                             }
                         }
                     }
@@ -127,47 +169,26 @@ Item {
                         id: removeAndDownloadItem
 
                         Layout.fillHeight: true
+                        Layout.minimumHeight: removeButton.implicitHeight + downloadButton.implicitHeight
                         implicitHeight: downloadButton.implicitHeight
                         implicitWidth: downloadButton.implicitWidth + 10
 
-                        Text {
+                        Yd.RemoveButton {
                             id: removeButton
 
-                            color: removeButtonMouseArea.containsMouse ? Yd.Theme.primary : Yd.Theme.neutral
-                            opacity: 0.6
-                            text: "\ue122"
+                            onClicked: Yd.VideoListModel.removeVideo(root.index)
 
-                            font {
-                                family: "typicons"
-                                pixelSize: Yd.Constants.iconSizeMedium
-                            }
                             anchors {
                                 right: removeAndDownloadItem.right
                                 top: removeAndDownloadItem.top
                             }
-                            MouseArea {
-                                id: removeButtonMouseArea
-
-                                anchors.fill: removeButton
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                            }
                         }
-                        Yd.RaisedButton {
+                        Yd.DownloadButton {
                             id: downloadButton
 
-                            button.bottomPadding: Yd.Constants.boxPadding / 2
-                            button.leftPadding: Yd.Constants.boxPadding / 1.5
-                            button.rightPadding: Yd.Constants.boxPadding / 1.5
-                            button.topPadding: Yd.Constants.boxPadding / 2
-                            color: Yd.Theme.downloadBtn
-                            text: "\ue065"
-                            textColor: "white"
+                            index: root.index
+                            state: root.state
 
-                            button.font {
-                                family: "typicons"
-                                pixelSize: Qt.application.font.pixelSize * 2.5
-                            }
                             anchors {
                                 bottom: removeAndDownloadItem.bottom
                                 right: removeAndDownloadItem.right
@@ -177,5 +198,16 @@ Item {
                 }
             }
         }
+        Yd.ProgressBar {
+            Layout.fillWidth: true
+            activeBar.bottomLeftRadius: Yd.Constants.boxRadius
+            activeBar.bottomRightRadius: value >= 1 ? Yd.Constants.boxRadius : 0
+            bottomLeftRadius: Yd.Constants.boxRadius
+            bottomRightRadius: Yd.Constants.boxRadius
+            value: root.progress
+        }
+    }
+    Yd.DropShadow {
+        target: columnLayout
     }
 }

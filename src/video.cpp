@@ -1,5 +1,6 @@
 #include "video.h"
 
+#include <qdatetime.h>
 #include <qdebug.h>
 #include <qtmetamacros.h>
 #include <qvariant.h>
@@ -7,6 +8,9 @@
 #include <QtLogging>
 #include <iostream>
 #include <utility>
+
+#include "application_settings.h"
+
 
 namespace yd_gui {
 VideoFormat::VideoFormat(QString format_id, QString container, quint32 width,
@@ -102,8 +106,10 @@ ManagedVideo::ManagedVideo(qint64 id, qint64 created_at, VideoInfo info,
       id_(id),
       created_at_(created_at),
       info_(std::move(info)),
+      progress_(0),
       selected_format_(
           !info_.formats().empty() ? info_.formats().last().format_id() : ""),
+      download_thumbnail_(ApplicationSettings::get().downloadThumbnail()),
       state_(state) {
     if (!info_.formats().empty()) {
         selected_format_ = info_.formats().last().format_id();
@@ -116,7 +122,7 @@ ManagedVideo::ManagedVideo(ManagedVideoParts parts, QObject* parent)
 
 void ManagedVideo::setProgress(float progress) {
     if (progress == progress_) return;
-    progress_ = std::move(progress);
+    progress_ = progress;
     emit progressChanged();
 }
 
@@ -124,6 +130,12 @@ void ManagedVideo::setSelectedFormat(QString selected_format) {
     if (selected_format == selected_format_) return;
     selected_format_ = std::move(selected_format);
     emit selectedFormatChanged();
+}
+
+void ManagedVideo::setDownloadThumbnail(bool value) {
+    if (value == download_thumbnail_) return;
+    download_thumbnail_ = value;
+    emit downloadThumbnailChanged();
 }
 
 void ManagedVideo::setState(DownloadState state) {
@@ -183,9 +195,9 @@ void ManagedVideo::setState(DownloadState state) {
         case DownloadState::kComplete:
             switch (state) {
                 case DownloadState::kAdded:
+                case DownloadState::kQueued:
                     state_ = state;
                     break;
-                case DownloadState::kQueued:
                 case DownloadState::kDownloading:
                 case DownloadState::kComplete:
                     return;
@@ -207,6 +219,8 @@ float ManagedVideo::progress() const { return progress_; }
 const QString& ManagedVideo::selected_format() const {
     return selected_format_;
 }
+
+bool ManagedVideo::download_thumbnail() const { return download_thumbnail_; }
 
 ManagedVideo::DownloadState ManagedVideo::state() const { return state_; }
 

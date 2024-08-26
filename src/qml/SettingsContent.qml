@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 import YdGui as Yd
 
@@ -29,6 +29,15 @@ ColumnLayout {
 
         Layout.alignment: Qt.AlignCenter
     }
+    CheckBox {
+        id: downloadThumbnailCheckBox
+
+        Layout.alignment: Qt.AlignCenter
+        checked: _settings.downloadThumbnail
+        onCheckedChanged: _settings.downloadThumbnail = checked
+        palette.windowText: Yd.Theme.neutral
+        text: qsTr("Download thumbnail by default")
+    }
     Yd.RaisedButton {
         id: clearHistoryButton
 
@@ -36,7 +45,7 @@ ColumnLayout {
         color: Yd.Theme.secondary
         text: qsTr("Clear History")
 
-        button.onClicked: clearHistory.open()
+        onClicked: clearHistory.open()
 
         Yd.ClearHistoryDialog {
             id: clearHistory

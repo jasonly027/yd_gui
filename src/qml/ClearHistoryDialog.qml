@@ -11,6 +11,7 @@ Dialog {
     objectName: "clearHistoryDialog"
     padding: Yd.Constants.boxPadding
     parent: Overlay.overlay
+    onAccepted: Yd.VideoListModel.removeAllVideos()
 
     background: Rectangle {
         id: rootBackground
@@ -67,7 +68,7 @@ Dialog {
                     id: "clearButton"
                     text: qsTr("Clear")
 
-                    button.onClicked: root.accept()
+                    onClicked: root.accept()
                 }
                 Yd.RaisedButton {
                     Layout.alignment: Qt.AlignCenter
@@ -75,7 +76,7 @@ Dialog {
                     id: "cancelButton"
                     text: qsTr("Cancel")
 
-                    button.onClicked: root.reject()
+                    onClicked: root.reject()
                 }
             }
         }

@@ -123,6 +123,7 @@ class ManagedVideo : public QObject {
         float progress READ progress WRITE setProgress NOTIFY progressChanged)
     Q_PROPERTY(QString selectedFormat READ selected_format WRITE
                    setSelectedFormat NOTIFY selectedFormatChanged)
+    Q_PROPERTY(bool downloadThumbnail READ download_thumbnail WRITE setDownloadThumbnail NOTIFY downloadThumbnailChanged)
     Q_PROPERTY(
         DownloadState state READ state WRITE setState NOTIFY stateChanged)
 
@@ -147,12 +148,14 @@ class ManagedVideo : public QObject {
    signals:
     void progressChanged();
     void selectedFormatChanged();
+    void downloadThumbnailChanged();
     void stateChanged(DownloadState state);
     void requestCancelDownload();
 
    public slots:
     void setProgress(float progress);
     void setSelectedFormat(QString selected_format);
+    void setDownloadThumbnail(bool);
     void setState(DownloadState state);
 
    public:  // NOLINT(readability-redundant-access-specifiers)
@@ -161,6 +164,7 @@ class ManagedVideo : public QObject {
     const VideoInfo& info() const;
     float progress() const;
     const QString& selected_format() const;
+    bool download_thumbnail() const;
     DownloadState state() const;
 
    private:
@@ -169,6 +173,7 @@ class ManagedVideo : public QObject {
     VideoInfo info_;           // video's info
     float progress_;         // download progress from 0.0 to 1.0
     QString selected_format_;  // selected format_id for download
+    bool download_thumbnail_;
     DownloadState state_;
 };
 

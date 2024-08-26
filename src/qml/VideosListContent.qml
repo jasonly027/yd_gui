@@ -8,12 +8,21 @@ Rectangle {
 
     color: Yd.Theme.videosListBg
     objectName: "videosListContent"
-    radius: Yd.Constants.boxRadius
+    topLeftRadius: Yd.Constants.boxRadius
+    topRightRadius: Yd.Constants.boxRadius
 
+    Connections {
+        function onRequestDownloadVideo(video) {
+            Yd.Downloader.enqueue_video(video);
+        }
+
+        target: Yd.VideoListModel
+    }
     ListView {
         id: listView
 
         anchors.fill: parent
+        boundsBehavior: Flickable.StopAtBounds
         clip: true
         model: Yd.VideoListModel
         spacing: Yd.Constants.boxPadding

@@ -1,19 +1,53 @@
 #include "video_list_model.h"
 
 #include <qabstractitemmodel.h>
+#include <qalgorithms.h>
 #include <qbytearray.h>
 #include <qobject.h>
 #include <qtmetamacros.h>
+#include <qtpreprocessorsupport.h>
 #include <qvariant.h>
-
-#include <QtAlgorithms>
 
 #include "database.h"
 #include "video.h"
 
 namespace yd_gui {
 VideoListModel::VideoListModel(Database& db, QObject* parent)
-    : QAbstractListModel(parent), db_(db) {}
+    : QAbstractListModel(parent), db_(db) {
+    // videos_.append(
+    //     {new ManagedVideo(
+    //          0, 111,
+    //          VideoInfo(
+    //              "652eccdcf4d64600015fd610", "Sausages and Salad", "Oscar",
+    //              1438,
+    //              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
+    //              "652eccdcf4d64600015fd610/custom_thumbnail/"
+    //              "1080.jpg?1701815955",
+    //              "https://www.americastestkitchen.com/cookscountry/episode/"
+    //              "918-sausages-and-salad",
+    //              {VideoFormat("hls-360", "mp4", 426, 240, 0),
+    //               VideoFormat("hls-1126", "mp4", 854, 480, 0),
+    //               VideoFormat("hls-2928", "mp4", 1280, 720, 0),
+    //               VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
+    //              true),
+    //          DownloadState::kAdded),
+    //      new ManagedVideo(
+    //          1, 222,
+    //          VideoInfo(
+    //              "652eccdcf4d64600015fd610", "Sausages and Salad 2", "Joseph",
+    //              1438,
+    //              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
+    //              "652eccdcf4d64600015fd610/custom_thumbnail/"
+    //              "1080.jpg?1701815955",
+    //              "https://www.americastestkitchen.com/cookscountry/episode/"
+    //              "918-sausages-and-salad",
+    //              {VideoFormat("hls-360", "mp4", 426, 240, 0),
+    //               VideoFormat("hls-1126", "mp4", 854, 480, 0),
+    //               VideoFormat("hls-2928", "mp4", 1280, 720, 0),
+    //               VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
+    //              true),
+    //          DownloadState::kAdded)});
+}
 
 VideoListModel::~VideoListModel() { qDeleteAll(videos_); }
 
@@ -39,12 +73,24 @@ QVariant VideoListModel::data(const QModelIndex& index, int role) const {
                 return videos_.at(row)->created_at();
             case VideoListModelRole::kSelectedFormatRole:
                 return videos_.at(row)->selected_format();
+            case VideoListModelRole::kDownloadThumbnail:
+                return videos_.at(row)->download_thumbnail();
+            case VideoListModelRole::kState:
+                return QVariant::fromValue(videos_.at(row)->state());
             default:
                 return QVariant();
         }
     }
 
     return QVariant();
+}
+
+bool VideoListModel::setData(const QModelIndex& index, const QVariant& value,
+                             int role) {
+    Q_UNUSED(index);
+    Q_UNUSED(value);
+    Q_UNUSED(role);
+    return false;
 }
 
 QHash<int, QByteArray> VideoListModel::roleNames() const {
@@ -54,7 +100,9 @@ QHash<int, QByteArray> VideoListModel::roleNames() const {
         {static_cast<int>(VideoListModelRole::kCreatedAtRole), "createdAt"},
         {static_cast<int>(VideoListModelRole::kSelectedFormatRole),
          "selectedFormat"},
-    };
+        {static_cast<int>(VideoListModelRole::kDownloadThumbnail),
+         "downloadThumbnail"},
+        {static_cast<int>(VideoListModelRole::kState), "state"}};
     return kRoles;
 }
 
@@ -98,6 +146,12 @@ void VideoListModel::downloadAllVideos() {
     for (auto* const video : videos_) {
         emit requestDownloadVideo(video);
     }
+}
+
+void VideoListModel::cancelDownload(int row) {
+    if (row < 0 || row >= videos_.size()) return;
+
+    emit videos_[row]->requestCancelDownload();
 }
 
 void VideoListModel::cancelAllDownloads() {

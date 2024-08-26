@@ -43,6 +43,11 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     qml/LinkText.qml
     qml/FormatComboBox.qml
     qml/FormatDelegate.qml
+    qml/ProgressBar.qml
+    qml/Console.qml
+    qml/RemoveButton.qml
+    qml/DownloadButton.qml
+    qml/TestDel.qml
 )
 
 qt_add_resources(${PROJECT_NAME}_lib "fonts"

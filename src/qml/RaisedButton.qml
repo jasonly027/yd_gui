@@ -12,6 +12,8 @@ Item {
     property alias text: button.text
     property alias textColor: button.palette.buttonText
 
+    signal clicked(MouseEvent ev)
+
     implicitHeight: dropShadowTarget.implicitHeight
     implicitWidth: dropShadowTarget.implicitWidth
     objectName: "raisedButton"
@@ -70,6 +72,8 @@ Item {
 
         Button {
             id: button
+
+            onClicked: (ev) => root.clicked(ev)
 
             bottomPadding: 5
             font {

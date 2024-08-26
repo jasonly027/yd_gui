@@ -10,8 +10,9 @@ Item {
     readonly property color consoleBg: current.consoleBg
     property var current: themes[_settings.theme] ?? themes["darkPurple"]
     readonly property bool darkMode: current.darkMode
-    readonly property color downloadBtn: current.downloadBtn
-    readonly property color downloadingBtn: current.downloadingBtn
+    readonly property color downloadBtnAdded: current.downloadBtnAdded
+    readonly property color downloadBtnDownloading: current.downloadBtnDownloading
+    readonly property color downloadBtnDone: current.downloadBtnDone
     readonly property color dropDownBg: current.dropDownBg
     readonly property color error: current.error
     readonly property color formatComboBoxBg: current.formatComboBoxBg
@@ -31,9 +32,9 @@ Item {
             cancelBtn: "#999999",
             consoleBg: "#232428",
             darkMode: true,
-            downloadBtn: "#ffa3b0",
-            // tbd
-            downloadingBtn: "red",
+            downloadBtnAdded: "#ffa3b0",
+            downloadBtnDownloading: "#d0b1ff",
+            downloadBtnDone: "#B994EC",
             dropDownBg: "#383a40",
             error: "#cc4125",
             formatComboBoxBg: "#383a40",
@@ -55,9 +56,9 @@ Item {
             cancelBtn: "#999999",
             consoleBg: "#d9d9d9",
             darkMode: false,
-            downloadBtn: "#ffa3b0",
-            // tbd
-            downloadingBtn: "red",
+            downloadBtnAdded: "#ffa3b0",
+            downloadBtnDownloading: "#d0b1ff",
+            downloadBtnDone: "#B994EC",
             dropDownBg: "#d9d9d9",
             error: "#cc4125",
             formatComboBoxBg: "#d9d9d9",
@@ -88,8 +89,9 @@ Item {
             required property color cancelBtn
             required property color consoleBg
             required property bool darkMode
-            required property color downloadBtn
-            required property color downloadingBtn
+            required property color downloadBtnAdded
+            required property color downloadBtnDownloading
+            required property color downloadBtnDone
             required property color dropDownBg
             required property color error
             required property color formatComboBoxBg

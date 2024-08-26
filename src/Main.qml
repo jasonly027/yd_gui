@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtCore
 import YdGui as Yd
 
 ApplicationWindow {
@@ -13,17 +14,6 @@ ApplicationWindow {
     visible: true
     width: 900
 
-    footer: Pane {
-        id: footerPane
-
-        focusPolicy: Qt.ClickFocus
-        implicitHeight: 100
-        implicitWidth: root.width
-
-        background: Rectangle {
-            color: "transparent"
-        }
-    }
     menuBar: Pane {
         id: menuBarPane
 
@@ -77,6 +67,8 @@ ApplicationWindow {
 
                         color: Yd.Theme.cancelBtn
                         text: qsTr("Cancel All")
+
+                        onClicked: Yd.VideoListModel.cancelAllDownloads()
                     }
                 }
                 Yd.SettingsDrawer {
@@ -91,22 +83,70 @@ ApplicationWindow {
         }
     }
 
-    Pane {
-        id: videosListPane
+    Settings {
+        property alias windowHeight: root.height
+        property alias windowWidth: root.width
+        property alias windowX: root.x
+        property alias windowY: root.y
+    }
+    SplitView {
+        id: splitView
 
         anchors.fill: parent
-        focusPolicy: Qt.ClickFocus
-        padding: 0
+        orientation: Qt.Vertical
 
-        background: Rectangle {
-            color: "transparent"
+        handle: Rectangle {
+            id: handleDelegate
+
+            color: "red"
+            implicitHeight: 0
+            implicitWidth: splitView.width
+
+            containmentMask: Item {
+                height: errorConsole.previewHeight
+                width: splitView.width
+            }
         }
 
-        Yd.VideosListContent {
-            id: videosList
+        Pane {
+            id: videosListPane
 
-            anchors.fill: parent
-            anchors.margins: 20
+            SplitView.fillHeight: true
+            focusPolicy: Qt.ClickFocus
+            padding: 0
+
+            background: Rectangle {
+                color: "transparent"
+            }
+
+            Yd.VideosListContent {
+                id: videosList
+
+                anchors {
+                    fill: parent
+                    leftMargin: 20
+                    rightMargin: 20
+                    topMargin: 20
+                }
+            }
+        }
+        Pane {
+            id: consolePane
+
+            SplitView.minimumHeight: errorConsole.previewHeight
+            SplitView.preferredHeight: errorConsole.previewHeight
+            focusPolicy: Qt.ClickFocus
+            padding: 0
+
+            background: Rectangle {
+                color: "transparent"
+            }
+
+            Yd.Console {
+                id: errorConsole
+
+                anchors.fill: parent
+            }
         }
     }
 }
