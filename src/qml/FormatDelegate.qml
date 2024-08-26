@@ -67,7 +67,10 @@ Rectangle {
             Layout.minimumWidth: 0
             color: root.textColor
             elide: Text.ElideRight
-            font.pixelSize: Qt.application.font.pixelSize * 0.8
+            font {
+                pixelSize: Qt.application.font.pixelSize * 0.9
+                capitalization: Font.AllUppercase
+            }
             padding: 3
             text: root.model.container
 

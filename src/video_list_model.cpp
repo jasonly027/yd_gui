@@ -34,8 +34,8 @@ VideoListModel::VideoListModel(Database& db, QObject* parent)
     //      new ManagedVideo(
     //          1, 222,
     //          VideoInfo(
-    //              "652eccdcf4d64600015fd610", "Sausages and Salad 2", "Joseph",
-    //              1438,
+    //              "652eccdcf4d64600015fd610", "Sausages and Salad 2",
+    //              "Joseph", 1438,
     //              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
     //              "652eccdcf4d64600015fd610/custom_thumbnail/"
     //              "1080.jpg?1701815955",
@@ -87,9 +87,41 @@ QVariant VideoListModel::data(const QModelIndex& index, int role) const {
 
 bool VideoListModel::setData(const QModelIndex& index, const QVariant& value,
                              int role) {
-    Q_UNUSED(index);
-    Q_UNUSED(value);
-    Q_UNUSED(role);
+    if (!index.isValid()) return false;
+
+    const int row = index.row();
+    if (row < 0 || row >= videos_.size()) return false;
+
+    auto role_enum = static_cast<VideoListModelRole>(role);
+    qDebug() << "setingdata";
+    switch (role_enum) {
+        case VideoListModelRole::kInfoRole:
+            return false;
+        case VideoListModelRole::kProgressRole: {
+            bool ok = false;
+            float progress = value.toFloat(&ok);
+            if (!ok) return false;
+            videos_[row]->setProgress(progress);
+            emit dataChanged(index, index, {role});
+            return true;
+        }
+        case VideoListModelRole::kCreatedAtRole:
+            return false;
+        case VideoListModelRole::kSelectedFormatRole: {
+            videos_[row]->setSelectedFormat(value.toString());
+            emit dataChanged(index, index, {role});
+            return true;
+        }
+        case VideoListModelRole::kDownloadThumbnail: {
+            videos_[row]->setDownloadThumbnail(value.toBool());
+            emit dataChanged(index, index, {role});
+            return true;
+        }
+        case VideoListModelRole::kState: {
+            return false; // State shouldn't be changed from QML
+        }
+    }
+
     return false;
 }
 

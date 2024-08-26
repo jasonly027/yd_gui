@@ -6,13 +6,8 @@ import YdGui as Yd
 Item {
     id: root
 
-    required property int createdAt
-    required property bool downloadThumbnail
+    required property var model
     required property int index
-    required property Yd.videoInfo info
-    required property real progress
-    required property string selectedFormat
-    required property int state
 
     implicitHeight: columnLayout.implicitHeight
     implicitWidth: columnLayout.implicitWidth
@@ -56,9 +51,9 @@ Item {
 
                         Layout.preferredHeight: sourceSize.height
                         asynchronous: true
-                        source: root.info.thumbnail
+                        source: root.model.info.thumbnail
                         sourceSize.height: rowLayout.implicitHeight
-                        visible: root.info.thumbnail !== ""
+                        visible: root.model.info.thumbnail !== ""
 
                         Label {
                             id: secondsText
@@ -69,14 +64,14 @@ Item {
                             text: {
                                 const secsInAHour = 3600;
                                 const secsInAMinute = 60;
-                                const hrs = Math.floor(root.info.seconds / secsInAHour);
-                                const mins = Math.floor((root.info.seconds - (hrs * secsInAHour)) / secsInAMinute);
-                                const secs = root.info.seconds - (hrs * secsInAHour) - (mins * secsInAMinute);
+                                const hrs = Math.floor(root.model.info.seconds / secsInAHour);
+                                const mins = Math.floor((root.model.info.seconds - (hrs * secsInAHour)) / secsInAMinute);
+                                const secs = root.model.info.seconds - (hrs * secsInAHour) - (mins * secsInAMinute);
                                 if (hrs !== 0)
                                     return `${hrs}:${mins}:${secs}`;
                                 return `${mins}:${secs}`;
                             }
-                            visible: root.info.seconds > 0
+                            visible: root.model.info.seconds > 0
 
                             background: Rectangle {
                                 color: Yd.Theme.darkMode ? "black" : "white"
@@ -106,7 +101,7 @@ Item {
                                 id: titleAudioText
 
                                 Layout.fillWidth: true
-                                text: root.info.title !== "" ? root.info.title : "Untitled"
+                                text: root.model.info.title !== "" ? root.model.info.title : "Untitled"
                             }
                             Text {
                                 id: authorText
@@ -114,7 +109,7 @@ Item {
                                 Layout.fillWidth: true
                                 color: Yd.Theme.neutral
                                 elide: Text.ElideRight
-                                text: root.info.author !== "" ? root.info.author : "No Author"
+                                text: root.model.info.author !== "" ? root.model.info.author : "No Author"
                             }
                             Loader {
                                 id: linkTextLoader
@@ -122,12 +117,12 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: implicitWidth
                                 active: visible
-                                visible: root.info.url !== ""
+                                visible: root.model.info.url !== ""
 
                                 sourceComponent: Yd.LinkText {
                                     id: linkText
 
-                                    text: root.info.url
+                                    text: root.model.info.url
                                 }
                             }
                         }
@@ -142,13 +137,13 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: implicitWidth
                                 active: visible
-                                visible: root.info.formats.length > 0
+                                visible: root.model.info.formats.length > 0
 
                                 sourceComponent: Yd.FormatComboBox {
                                     id: formatComboxBox
 
-                                    formats: root.info.formats
-                                    selectedFormat: root.selectedFormat
+                                    formats: root.model.info.formats
+                                    selectedFormat: root.model.selectedFormat
                                 }
                             }
                             CheckBox {
@@ -157,11 +152,11 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: implicitWidth
                                 Layout.minimumWidth: 0
-                                checked: root.downloadThumbnail
+                                checked: root.model.downloadThumbnail
                                 palette.windowText: Yd.Theme.darkMode ? "white" : "black"
                                 text: qsTr("Download Thumbnail")
 
-                                onCheckedChanged: root.downloadThumbnail = checked
+                                onCheckedChanged: root.model.downloadThumbnail = checked
                             }
                         }
                     }
@@ -187,7 +182,7 @@ Item {
                             id: downloadButton
 
                             index: root.index
-                            state: root.state
+                            state: root.model.state
 
                             anchors {
                                 bottom: removeAndDownloadItem.bottom
@@ -204,7 +199,7 @@ Item {
             activeBar.bottomRightRadius: value >= 1 ? Yd.Constants.boxRadius : 0
             bottomLeftRadius: Yd.Constants.boxRadius
             bottomRightRadius: Yd.Constants.boxRadius
-            value: root.progress
+            value: root.model.progress
         }
     }
     Yd.DropShadow {
