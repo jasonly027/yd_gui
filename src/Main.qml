@@ -14,6 +14,15 @@ ApplicationWindow {
     visible: true
     width: 900
 
+    Connections {
+        target: _database
+
+        function onVideosPushed(videos) {
+            console.log("pushing db vids to model");
+            Yd.VideoListModel.appendVideos(videos);
+        }
+    }
+
     menuBar: Pane {
         id: menuBarPane
 

@@ -1,5 +1,6 @@
 #include "video.h"
 
+#include <QtCore/qsharedpointer.h>
 #include <qdatetime.h>
 #include <qdebug.h>
 #include <qtmetamacros.h>
@@ -10,7 +11,6 @@
 #include <utility>
 
 #include "application_settings.h"
-
 
 namespace yd_gui {
 VideoFormat::VideoFormat(QString format_id, QString container, quint32 width,
@@ -39,8 +39,7 @@ bool operator!=(const VideoFormat& lhs, const VideoFormat& rhs) {
 }
 
 std::ostream& operator<<(std::ostream& os, const VideoFormat& format) {
-    os << "VideoFormat{"
-       << " format_id: " << format.format_id().toStdString()
+    os << "VideoFormat{" << " format_id: " << format.format_id().toStdString()
        << ", container: " << format.container().toStdString()
        << ", width: " << format.width() << ", height: " << format.height()
        << ", fps: " << format.fps() << " }";
@@ -84,8 +83,7 @@ bool operator!=(const VideoInfo& lhs, const VideoInfo& rhs) {
 std::ostream& operator<<(std::ostream& os, const VideoInfo& info) {
     const auto& formats = info.formats();
 
-    os << "VideoInfo{"
-       << " video_id: " << info.video_id().toStdString()
+    os << "VideoInfo{" << " video_id: " << info.video_id().toStdString()
        << ", title: " << info.title().toStdString()
        << ", author: " << info.author().toStdString()
        << ", seconds: " << info.seconds()
@@ -228,6 +226,15 @@ bool operator==(const ManagedVideoParts& lhs, const ManagedVideoParts& rhs) {
     return lhs.id == rhs.id && lhs.created_at == rhs.created_at &&
            lhs.info == rhs.info && lhs.state == rhs.state;
 }
+
+// std::optional<VideoListModel*> ManagedVideo::model_parent() {
+//     if (parent() == nullptr) return nullopt;
+
+//     auto* model_parent = qobject_cast<VideoListModel*>(this->parent());
+//     if (model_parent == nullptr) return nullopt;
+
+//     return model_parent;
+// }
 
 }  // namespace yd_gui
 

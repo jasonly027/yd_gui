@@ -34,8 +34,8 @@ VideoListModel::VideoListModel(Database& db, QObject* parent)
     //      new ManagedVideo(
     //          1, 222,
     //          VideoInfo(
-    //              "652eccdcf4d64600015fd610", "Sausages and Salad 2",
-    //              "Joseph", 1438,
+    //              "652eccdcf4d64600015fd610", "Sausages and Salad 2", "Joseph",
+    //              1438,
     //              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
     //              "652eccdcf4d64600015fd610/custom_thumbnail/"
     //              "1080.jpg?1701815955",
@@ -48,8 +48,6 @@ VideoListModel::VideoListModel(Database& db, QObject* parent)
     //              true),
     //          DownloadState::kAdded)});
 }
-
-VideoListModel::~VideoListModel() { qDeleteAll(videos_); }
 
 int VideoListModel::rowCount(const QModelIndex& parent) const {
     if (parent.isValid()) return 0;
@@ -93,32 +91,48 @@ bool VideoListModel::setData(const QModelIndex& index, const QVariant& value,
     if (row < 0 || row >= videos_.size()) return false;
 
     auto role_enum = static_cast<VideoListModelRole>(role);
-    qDebug() << "setingdata";
     switch (role_enum) {
         case VideoListModelRole::kInfoRole:
-            return false;
+            break;
         case VideoListModelRole::kProgressRole: {
             bool ok = false;
-            float progress = value.toFloat(&ok);
-            if (!ok) return false;
-            videos_[row]->setProgress(progress);
-            emit dataChanged(index, index, {role});
-            return true;
+            if (float progress = value.toFloat(&ok);
+                ok && progress != videos_[row]->progress()) {
+                videos_[row]->setProgress(progress);
+                emit dataChanged(index, index, {role});
+                return true;
+            }
+            break;
         }
         case VideoListModelRole::kCreatedAtRole:
-            return false;
+            break;
         case VideoListModelRole::kSelectedFormatRole: {
-            videos_[row]->setSelectedFormat(value.toString());
-            emit dataChanged(index, index, {role});
-            return true;
+            if (QString selected_format = value.toString();
+                selected_format != videos_[row]->selected_format()) {
+                videos_[row]->setSelectedFormat(selected_format);
+                emit dataChanged(index, index, {role});
+                return true;
+            }
+            break;
         }
         case VideoListModelRole::kDownloadThumbnail: {
-            videos_[row]->setDownloadThumbnail(value.toBool());
-            emit dataChanged(index, index, {role});
-            return true;
+            if (bool download_thumbnail = value.toBool();
+                download_thumbnail != videos_[row]->download_thumbnail()) {
+                videos_[row]->setDownloadThumbnail(download_thumbnail);
+                emit dataChanged(index, index, {role});
+                return true;
+            }
+            break;
         }
         case VideoListModelRole::kState: {
-            return false; // State shouldn't be changed from QML
+            if (!value.canConvert<DownloadState>()) break;
+            if (auto state = value.value<DownloadState>();
+                state != videos_[row]->state()) {
+                videos_[row]->setState(state);
+                emit dataChanged(index, index, {role});
+                return true;
+            }
+            break;
         }
     }
 
@@ -195,7 +209,7 @@ void VideoListModel::cancelAllDownloads() {
 void VideoListModel::prependVideos(QList<ManagedVideoParts> parts) {
     while (!parts.empty()) {
         beginInsertRows(QModelIndex(), 0, 0);
-        videos_.prepend(new ManagedVideo(parts.takeLast()));
+        videos_.prepend(new ManagedVideo(parts.takeLast(), this));
         endInsertRows();
     }
 }
@@ -205,7 +219,7 @@ void VideoListModel::appendVideos(QList<ManagedVideoParts> parts) {
     videos.reserve(parts.size());
 
     while (!parts.empty()) {
-        videos << new ManagedVideo(parts.takeFirst());
+        videos << new ManagedVideo(parts.takeFirst(), this);
     }
 
     beginInsertRows(QModelIndex(), videos_.size(),

@@ -140,10 +140,11 @@ Item {
                                 visible: root.model.info.formats.length > 0
 
                                 sourceComponent: Yd.FormatComboBox {
-                                    id: formatComboxBox
+                                    id: formatComboBox
 
                                     formats: root.model.info.formats
                                     selectedFormat: root.model.selectedFormat
+                                    onProposeSelectedFormat: (formatId) => root.model.selectedFormat = formatId;
                                 }
                             }
                             CheckBox {
@@ -155,8 +156,8 @@ Item {
                                 checked: root.model.downloadThumbnail
                                 palette.windowText: Yd.Theme.darkMode ? "white" : "black"
                                 text: qsTr("Download Thumbnail")
-
-                                onCheckedChanged: root.model.downloadThumbnail = checked
+                                // Binding loop occurs when onCheckChanged is used instead of onToggled
+                                onToggled: root.model.downloadThumbnail = checked
                             }
                         }
                     }

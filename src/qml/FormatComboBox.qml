@@ -10,6 +10,7 @@ Item {
     property int __widestFormatText: 0
     required property list<Yd.videoFormat> formats
     required property string selectedFormat
+    signal proposeSelectedFormat(string format)
 
     implicitHeight: rowLayout.implicitHeight
     implicitWidth: __widestFormatText + icon.implicitWidth + rowLayout.spacing
@@ -95,7 +96,7 @@ Item {
                         }
                     }
                     mouseArea.onClicked: {
-                        root.selectedFormat = model.formatId;
+                        root.proposeSelectedFormat(model.formatId);
                         menu.close();
                     }
                 }

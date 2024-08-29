@@ -36,8 +36,6 @@ class VideoListModel : public QAbstractListModel {
     explicit VideoListModel(Database& db = Database::get(),
                             QObject* parent = nullptr);
 
-    ~VideoListModel() override;
-
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
 
     QVariant data(const QModelIndex& index,
