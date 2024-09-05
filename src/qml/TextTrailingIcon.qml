@@ -32,6 +32,7 @@ Item {
             Layout.minimumWidth: 0
             color: root.color
             elide: Text.ElideMiddle
+            maximumLineCount: 1
         }
         Text {
             id: trailingIcon

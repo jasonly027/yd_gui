@@ -16,6 +16,8 @@ namespace yd_gui {
 class Database : public QObject {
     Q_OBJECT
 
+    Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
+
    public:
     static Database& get();
 

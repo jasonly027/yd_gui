@@ -64,7 +64,7 @@ Dialog {
 
                 Yd.RaisedButton {
                     Layout.alignment: Qt.AlignCenter
-                    color: Yd.Theme.error
+                    color: Yd.Theme.clearHistoryBtn
                     id: "clearButton"
                     text: qsTr("Clear")
 

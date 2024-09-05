@@ -18,6 +18,7 @@ Yd.TextTrailingIcon {
         weight: Font.Medium
     }
     trailingIcon {
+        ToolTip.delay: Yd.Constants.toolTipDelay
         ToolTip.text: audio ? qsTr("Audio available") : qsTr("No audio available")
         ToolTip.visible: audioHoverHandler.hovered
     }

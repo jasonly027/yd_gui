@@ -25,7 +25,8 @@ class VideoListModel : public QAbstractListModel {
 
    public:
     enum class VideoListModelRole {
-        kInfoRole = Qt::UserRole,
+        kIdRole = Qt::UserRole,
+        kInfoRole,
         kProgressRole,
         kCreatedAtRole,
         kSelectedFormatRole,
@@ -46,6 +47,10 @@ class VideoListModel : public QAbstractListModel {
 
     QHash<int, QByteArray> roleNames() const override;
 
+    QModelIndex find_video(ManagedVideo& video) const;
+
+    void update_video(ManagedVideo& video, const QList<int>& roles);
+
     Q_INVOKABLE void removeVideo(int row);
 
     Q_INVOKABLE void removeAllVideos();
@@ -65,6 +70,8 @@ class VideoListModel : public QAbstractListModel {
     void prependVideos(QList<ManagedVideoParts>);
 
     void appendVideos(QList<ManagedVideoParts>);
+
+    void paginate();
 
    private:
     QList<ManagedVideo*> videos_;

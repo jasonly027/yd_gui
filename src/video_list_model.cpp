@@ -6,7 +6,10 @@
 #include <qobject.h>
 #include <qtmetamacros.h>
 #include <qtpreprocessorsupport.h>
+#include <qtypes.h>
 #include <qvariant.h>
+
+#include <optional>
 
 #include "database.h"
 #include "video.h"
@@ -14,39 +17,7 @@
 namespace yd_gui {
 VideoListModel::VideoListModel(Database& db, QObject* parent)
     : QAbstractListModel(parent), db_(db) {
-    // videos_.append(
-    //     {new ManagedVideo(
-    //          0, 111,
-    //          VideoInfo(
-    //              "652eccdcf4d64600015fd610", "Sausages and Salad", "Oscar",
-    //              1438,
-    //              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
-    //              "652eccdcf4d64600015fd610/custom_thumbnail/"
-    //              "1080.jpg?1701815955",
-    //              "https://www.americastestkitchen.com/cookscountry/episode/"
-    //              "918-sausages-and-salad",
-    //              {VideoFormat("hls-360", "mp4", 426, 240, 0),
-    //               VideoFormat("hls-1126", "mp4", 854, 480, 0),
-    //               VideoFormat("hls-2928", "mp4", 1280, 720, 0),
-    //               VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-    //              true),
-    //          DownloadState::kAdded),
-    //      new ManagedVideo(
-    //          1, 222,
-    //          VideoInfo(
-    //              "652eccdcf4d64600015fd610", "Sausages and Salad 2", "Joseph",
-    //              1438,
-    //              "https://gvimage.zype.com/5b0820fbdc4390132f0001ca/"
-    //              "652eccdcf4d64600015fd610/custom_thumbnail/"
-    //              "1080.jpg?1701815955",
-    //              "https://www.americastestkitchen.com/cookscountry/episode/"
-    //              "918-sausages-and-salad",
-    //              {VideoFormat("hls-360", "mp4", 426, 240, 0),
-    //               VideoFormat("hls-1126", "mp4", 854, 480, 0),
-    //               VideoFormat("hls-2928", "mp4", 1280, 720, 0),
-    //               VideoFormat("hls-4280", "mp4", 1920, 1080, 0)},
-    //              true),
-    //          DownloadState::kAdded)});
+    paginate();
 }
 
 int VideoListModel::rowCount(const QModelIndex& parent) const {
@@ -55,14 +26,16 @@ int VideoListModel::rowCount(const QModelIndex& parent) const {
 }
 
 QVariant VideoListModel::data(const QModelIndex& index, int role) const {
-    if (!index.isValid()) return QVariant();
+    if (!index.isValid() || !hasIndex(index.row(), index.column()))
+        return QVariant();
 
     const int row = index.row();
-    if (row < 0 || row >= videos_.size()) return QVariant();
 
     auto role_enum = static_cast<VideoListModelRole>(role);
     if (row < rowCount()) {
         switch (role_enum) {
+            case VideoListModelRole::kIdRole:
+                return videos_.at(row)->id();
             case VideoListModelRole::kInfoRole:
                 return QVariant::fromValue(videos_.at(row)->info());
             case VideoListModelRole::kProgressRole:
@@ -85,54 +58,58 @@ QVariant VideoListModel::data(const QModelIndex& index, int role) const {
 
 bool VideoListModel::setData(const QModelIndex& index, const QVariant& value,
                              int role) {
-    if (!index.isValid()) return false;
+    if (!index.isValid() || !hasIndex(index.row(), index.column()))
+        return false;
 
     const int row = index.row();
-    if (row < 0 || row >= videos_.size()) return false;
 
     auto role_enum = static_cast<VideoListModelRole>(role);
     switch (role_enum) {
+        case VideoListModelRole::kIdRole:
         case VideoListModelRole::kInfoRole:
             break;
         case VideoListModelRole::kProgressRole: {
             bool ok = false;
-            if (float progress = value.toFloat(&ok);
-                ok && progress != videos_[row]->progress()) {
-                videos_[row]->setProgress(progress);
-                emit dataChanged(index, index, {role});
-                return true;
-            }
-            break;
+            float progress = value.toFloat(&ok);
+            if (!ok) break;
+
+            if (progress == videos_[row]->progress()) return true;
+
+            videos_[row]->setProgress(progress, false);
+            emit dataChanged(index, index, {role});
+            return true;
         }
         case VideoListModelRole::kCreatedAtRole:
             break;
         case VideoListModelRole::kSelectedFormatRole: {
-            if (QString selected_format = value.toString();
-                selected_format != videos_[row]->selected_format()) {
-                videos_[row]->setSelectedFormat(selected_format);
-                emit dataChanged(index, index, {role});
-                return true;
-            }
-            break;
+            QString selected_format = value.toString();
+
+            if (selected_format == videos_[row]->selected_format()) return true;
+
+            videos_[row]->setSelectedFormat(selected_format, false);
+            emit dataChanged(index, index, {role});
+            return true;
         }
         case VideoListModelRole::kDownloadThumbnail: {
-            if (bool download_thumbnail = value.toBool();
-                download_thumbnail != videos_[row]->download_thumbnail()) {
-                videos_[row]->setDownloadThumbnail(download_thumbnail);
-                emit dataChanged(index, index, {role});
+            bool download_thumbnail = value.toBool();
+
+            if (download_thumbnail == videos_[row]->download_thumbnail())
                 return true;
-            }
-            break;
+
+            videos_[row]->setDownloadThumbnail(download_thumbnail, false);
+            emit dataChanged(index, index, {role});
+            return true;
         }
         case VideoListModelRole::kState: {
             if (!value.canConvert<DownloadState>()) break;
-            if (auto state = value.value<DownloadState>();
-                state != videos_[row]->state()) {
-                videos_[row]->setState(state);
-                emit dataChanged(index, index, {role});
-                return true;
-            }
-            break;
+
+            auto state = value.value<DownloadState>();
+
+            if (state == videos_[row]->state()) return true;
+
+            videos_[row]->setState(state, false);
+            emit dataChanged(index, index, {role});
+            return true;
         }
     }
 
@@ -141,6 +118,7 @@ bool VideoListModel::setData(const QModelIndex& index, const QVariant& value,
 
 QHash<int, QByteArray> VideoListModel::roleNames() const {
     static const QHash<int, QByteArray> kRoles{
+        {static_cast<int>(VideoListModelRole::kIdRole), "dbId"},
         {static_cast<int>(VideoListModelRole::kInfoRole), "info"},
         {static_cast<int>(VideoListModelRole::kProgressRole), "progress"},
         {static_cast<int>(VideoListModelRole::kCreatedAtRole), "createdAt"},
@@ -152,8 +130,32 @@ QHash<int, QByteArray> VideoListModel::roleNames() const {
     return kRoles;
 }
 
+QModelIndex VideoListModel::find_video(ManagedVideo& video) const {
+    if (video.cached_index().has_value() &&
+        hasIndex(*video.cached_index(), 0) &&
+        &video == videos_[*video.cached_index()]) {
+        return this->index(*video.cached_index());
+    }
+
+    const qsizetype index = videos_.indexOf(&video);
+
+    if (index == static_cast<qsizetype>(-1)) return QModelIndex();
+
+    video.setCachedIndex(index);
+
+    return this->index(index);
+}
+
+void VideoListModel::update_video(ManagedVideo& video,
+                                  const QList<int>& roles) {
+    QModelIndex index = find_video(video);
+    if (!index.isValid()) return;
+
+    emit dataChanged(index, index, roles);
+}
+
 void VideoListModel::removeVideo(int row) {
-    if (row < 0 || row >= videos_.size()) return;
+    if (!hasIndex(row, 0)) return;
 
     beginRemoveRows(QModelIndex(), row, row);
     auto* const video = videos_.takeAt(row);
@@ -183,19 +185,22 @@ void VideoListModel::removeAllVideos() {
 }
 
 void VideoListModel::downloadVideo(int row) {
-    if (row < 0 || row >= videos_.size()) return;
+    if (!hasIndex(row, 0)) return;
 
-    emit requestDownloadVideo(videos_[row]);
+    if (videos_[row]->state() == DownloadState::kAdded ||
+        videos_[row]->state() == DownloadState::kComplete)
+        emit requestDownloadVideo(videos_[row]);
 }
 
 void VideoListModel::downloadAllVideos() {
     for (auto* const video : videos_) {
-        emit requestDownloadVideo(video);
+        if (video->state() == DownloadState::kAdded)
+            emit requestDownloadVideo(video);
     }
 }
 
 void VideoListModel::cancelDownload(int row) {
-    if (row < 0 || row >= videos_.size()) return;
+    if (!hasIndex(row, 0)) return;
 
     emit videos_[row]->requestCancelDownload();
 }
@@ -215,6 +220,8 @@ void VideoListModel::prependVideos(QList<ManagedVideoParts> parts) {
 }
 
 void VideoListModel::appendVideos(QList<ManagedVideoParts> parts) {
+    if (parts.empty()) return;
+
     QList<ManagedVideo*> videos;
     videos.reserve(parts.size());
 
@@ -223,9 +230,16 @@ void VideoListModel::appendVideos(QList<ManagedVideoParts> parts) {
     }
 
     beginInsertRows(QModelIndex(), videos_.size(),
-                    videos_.size() + videos.size());
+                    videos_.size() + videos.size() - 1);
     videos_.append(std::move(videos));
     endInsertRows();
+}
+
+void VideoListModel::paginate() {
+    prependVideos(videos_.empty()
+                      ? db_.fetch_first_chunk()
+                      : db_.fetch_chunk(videos_.first()->id(),
+                                        videos_.first()->created_at()));
 }
 
 }  // namespace yd_gui

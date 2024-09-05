@@ -17,41 +17,54 @@ Item {
         spacing: 0
         width: root.width
 
-        Label {
-            id: label
+        Rectangle {
+            id: tab
 
             Layout.fillHeight: true
-            bottomPadding: 10
-            color: (input.hovered || labelMouseArea.containsMouse) ? Yd.Theme.primary : Yd.Theme.inputBarIcon
-            horizontalAlignment: Text.AlignHCenter
-            leftPadding: Yd.Constants.boxPadding
-            rightPadding: Yd.Constants.boxPadding
-            text: qsTr("Link")
-            topPadding: 10
-            verticalAlignment: Text.AlignVCenter
+            bottomLeftRadius: Yd.Constants.boxRadius
+            color: Yd.Theme.inputBarTab
+            implicitHeight: tabText.implicitHeight + tabText.anchors.topMargin + tabText.anchors.bottomMargin
+            implicitWidth: tabText.implicitWidth + tabText.anchors.leftMargin + tabText.anchors.rightMargin
+            topLeftRadius: Yd.Constants.boxRadius
 
-            background: Rectangle {
-                id: labelBox
-
-                bottomLeftRadius: Yd.Constants.boxRadius
-                color: Yd.Theme.inputBarTab
-                topLeftRadius: Yd.Constants.boxRadius
-
-                border {
-                    color: Yd.Theme.inputBar
-                    width: 2
-                }
-            }
-
-            font {
-                pixelSize: Qt.application.font.pixelSize * 1.1
-                weight: Font.DemiBold
+            border {
+                color: Yd.Theme.inputBar
+                width: 2
             }
             MouseArea {
                 id: labelMouseArea
 
-                anchors.fill: label
+                anchors.fill: tab
                 hoverEnabled: true
+            }
+            BusyIndicator {
+                hoverEnabled: false
+                running: visible
+                visible: Yd.Downloader.isFetching
+
+                anchors {
+                    fill: parent
+                    margins: 4
+                }
+            }
+            Text {
+                id: tabText
+
+                color: (input.hovered || labelMouseArea.containsMouse) ? Yd.Theme.primary : Yd.Theme.inputBarIcon
+                text:  qsTr("Link")
+                visible: !Yd.Downloader.isFetching
+
+                font {
+                    pixelSize: Qt.application.font.pixelSize * 1.1
+                    weight: Font.DemiBold
+                }
+                anchors {
+                    bottomMargin: 10
+                    centerIn: parent
+                    leftMargin: Yd.Constants.boxPadding
+                    rightMargin: Yd.Constants.boxPadding
+                    topMargin: 10
+                }
             }
         }
         TextField {
@@ -60,7 +73,9 @@ Item {
             Layout.fillHeight: true
             Layout.fillWidth: true
             hoverEnabled: true
-            placeholderText: qsTr("Click to paste URL")
+            enabled: !Yd.Downloader.isFetching && _database.valid
+            inputMethodHints: Qt.ImhUrlCharactersOnly
+            placeholderText: _database.valid ? qsTr("Click to paste URL") : qsTr("History failed to load. Please restart.")
 
             background: Rectangle {
                 bottomRightRadius: Yd.Constants.boxRadius
@@ -68,8 +83,32 @@ Item {
                 topRightRadius: Yd.Constants.boxRadius
             }
 
+            onAccepted: Yd.Downloader.fetchInfo(text)
+
+            Connections {
+                function onIsFetchingChanged() {
+                    if (!Yd.Downloader.isFetching)
+                        input.clear();
+                }
+
+                target: Yd.Downloader
+            }
+
+            MouseArea {
+                id: inputMouseArea
+
+                anchors.fill: parent
+                cursorShape: Qt.IBeamCursor
+                enabled: input.text === ""
+
+                onClicked: {
+                    input.paste();
+                    input.text = input.text.trim();
+                    input.forceActiveFocus();
+                }
+            }
             font {
-                italic: input.length == 0
+                italic: input.length === 0
                 pixelSize: Qt.application.font.pixelSize
             }
         }

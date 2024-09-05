@@ -10,6 +10,9 @@ Text {
 
     signal clicked(MouseEvent ev)
 
+    ToolTip.delay: Yd.Constants.toolTipDelay
+    ToolTip.text: qsTr("Delete video from history")
+    ToolTip.visible: mouseArea.containsMouse
     color: mouseArea.containsMouse ? Yd.Theme.primary : Yd.Theme.neutral
     objectName: "removeButton"
     opacity: 0.6
@@ -26,6 +29,6 @@ Text {
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
 
-        onClicked: (ev) => root.clicked(ev)
+        onClicked: ev => root.clicked(ev)
     }
 }

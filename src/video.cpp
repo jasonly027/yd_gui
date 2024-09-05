@@ -1,16 +1,22 @@
 #include "video.h"
 
 #include <QtCore/qsharedpointer.h>
+#include <qabstractitemmodel.h>
 #include <qdatetime.h>
 #include <qdebug.h>
 #include <qtmetamacros.h>
+#include <qtpreprocessorsupport.h>
 #include <qvariant.h>
 
 #include <QtLogging>
 #include <iostream>
+#include <optional>
 #include <utility>
 
 #include "application_settings.h"
+#include "video_list_model.h"
+
+using std::optional, std::nullopt;
 
 namespace yd_gui {
 VideoFormat::VideoFormat(QString format_id, QString container, quint32 width,
@@ -118,25 +124,56 @@ ManagedVideo::ManagedVideo(ManagedVideoParts parts, QObject* parent)
     : ManagedVideo(parts.id, parts.created_at, std::move(parts.info),
                    parts.state, parent) {}
 
-void ManagedVideo::setProgress(float progress) {
-    if (progress == progress_) return;
-    progress_ = progress;
-    emit progressChanged();
+void ManagedVideo::setCachedIndex(optional<int> cached_index) {
+    cached_index_ = cached_index;
 }
 
-void ManagedVideo::setSelectedFormat(QString selected_format) {
+void ManagedVideo::setProgress(float progress, const bool update_model_parent) {
+    if (progress == progress_) return;
+
+    progress_ = progress;
+    emit progressChanged();
+
+    if (const optional<VideoListModel*> model = model_parent();
+        update_model_parent && model.has_value()) {
+        (*model)->update_video(
+            *this, {static_cast<int>(
+                       VideoListModel::VideoListModelRole::kProgressRole)});
+    }
+}
+
+void ManagedVideo::setSelectedFormat(QString selected_format,
+                                     const bool update_model_parent) {
     if (selected_format == selected_format_) return;
     selected_format_ = std::move(selected_format);
     emit selectedFormatChanged();
+
+    if (const optional<VideoListModel*> model = model_parent();
+        update_model_parent && model.has_value()) {
+        (*model)->update_video(
+            *this,
+            {static_cast<int>(
+                VideoListModel::VideoListModelRole::kSelectedFormatRole)});
+    }
 }
 
-void ManagedVideo::setDownloadThumbnail(bool value) {
+void ManagedVideo::setDownloadThumbnail(bool value,
+                                        const bool update_model_parent) {
     if (value == download_thumbnail_) return;
     download_thumbnail_ = value;
     emit downloadThumbnailChanged();
+
+    if (const optional<VideoListModel*> model = model_parent();
+        update_model_parent && model.has_value()) {
+        (*model)->update_video(
+            *this,
+            {static_cast<int>(
+                VideoListModel::VideoListModelRole::kDownloadThumbnail)});
+    }
 }
 
-void ManagedVideo::setState(DownloadState state) {
+void ManagedVideo::setState(DownloadState state,
+                            const bool update_model_parent) {
     /* States can only advance to the next sequential state
        However, they can always return to the added state (because of
        cancellable downloads)
@@ -204,11 +241,22 @@ void ManagedVideo::setState(DownloadState state) {
     }
 
     emit stateChanged(state_);
+
+    if (const optional<VideoListModel*> model = model_parent();
+        update_model_parent && model.has_value()) {
+        (*model)->update_video(
+            *this,
+            {static_cast<int>(VideoListModel::VideoListModelRole::kState)});
+    }
 }
 
 qint64 ManagedVideo::id() const { return id_; }
 
 qint64 ManagedVideo::created_at() const { return created_at_; }
+
+const optional<int>& ManagedVideo::cached_index() const {
+    return cached_index_;
+}
 
 const VideoInfo& ManagedVideo::info() const { return info_; }
 
@@ -227,14 +275,11 @@ bool operator==(const ManagedVideoParts& lhs, const ManagedVideoParts& rhs) {
            lhs.info == rhs.info && lhs.state == rhs.state;
 }
 
-// std::optional<VideoListModel*> ManagedVideo::model_parent() {
-//     if (parent() == nullptr) return nullopt;
+std::optional<VideoListModel*> ManagedVideo::model_parent() {
+    auto* const model = qobject_cast<VideoListModel*>(this->parent());
 
-//     auto* model_parent = qobject_cast<VideoListModel*>(this->parent());
-//     if (model_parent == nullptr) return nullopt;
-
-//     return model_parent;
-// }
+    return model != nullptr ? optional(model) : nullopt;
+}
 
 }  // namespace yd_gui
 

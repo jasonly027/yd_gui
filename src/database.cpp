@@ -1,5 +1,6 @@
 #include "database.h"
 
+#include <qcoreapplication.h>
 #include <qdatetime.h>
 #include <qobject.h>
 #include <qsqldatabase.h>
@@ -9,6 +10,7 @@
 
 #include <QStringBuilder>
 #include <algorithm>
+#include <iostream>
 #include <optional>
 
 #include "video.h"
@@ -69,6 +71,7 @@ void Database::addVideo(VideoInfo info) {
     QSqlDatabase db = QSqlDatabase::database(connection_name_);
     if (!db.transaction()) {
         log_error("Failed to add video (start add)");
+        log_error(db.lastError().text());
         return;
     }
 
@@ -416,13 +419,17 @@ QSqlDatabase Database::make_connection() {
 }
 
 void Database::log_error(QString message) {
-    emit errorPushed("[History] " % std::move(message));
+    emit errorPushed("[History] " % std::move(message) % '\n');
 }
 
 static bool create_database(const QString& file_name,
                             const QString& connection_name) {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connection_name);
-    db.setDatabaseName(file_name);
+    if (file_name == ":memory:")
+        db.setDatabaseName(file_name);
+    else
+        db.setDatabaseName(QCoreApplication::applicationDirPath() % '/' %
+                           file_name);
 
     if (!db.open()) {
         qDebug() << "[History] Failed to open history";

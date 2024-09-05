@@ -18,7 +18,6 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QtQmlIntegration>
 #include <cassert>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
@@ -134,7 +133,7 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
     No simultaneous fetches. fetchInfoBadParse is emit if the metadata was
    unusable.
  */
-void Downloader::fetch_info(const QString& url) {
+void Downloader::fetchInfo(const QString& url) {
     if (is_fetching_ || !check_program_exists()) return;
     set_is_fetching(true);
 
@@ -152,14 +151,20 @@ void Downloader::enqueue_video(ManagedVideo* const video) {
         video->state() == DownloadState::kDownloading)
         return;
 
+    video->setState(DownloadState::kQueued);
+    video->setProgress(0);
+
+    queue_ << video;
+
     QObject::connect(video, &ManagedVideo::requestCancelDownload, this,
-                     [this, video]() {
+                     [this, video] {
                          video->setState(DownloadState::kAdded);
+                         video->setProgress(0);
                          queue_.removeOne(video);
                      });
-
-    video->setState(DownloadState::kQueued);
-    queue_ << video;
+    QObject::connect(
+        video, &ManagedVideo::downloadFinished, this,
+        [this, video] { QObject::disconnect(video, nullptr, this, nullptr); });
 
     if (queue_.size() == 1 && !is_downloading_) {
         start_download();
@@ -240,7 +245,8 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
 
             if (match.hasMatch()) {
                 bool ok = false;
-                const float progress = match.captured("percent").toFloat(&ok);
+                const float progress =
+                    match.captured("percent").toFloat(&ok) / 100;
                 if (ok) video.setProgress(progress);
             }
         });
@@ -250,9 +256,10 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
         &video, [&video](int exit_code, QProcess::ExitStatus exit_status) {
             if (exit_status == QProcess::ExitStatus::NormalExit &&
                 exit_code == 0) {
-                video.setProgress(100.0);
+                video.setProgress(1.0);
                 video.setState(DownloadState::kComplete);
             }
+            emit video.downloadFinished();
         });
 
     return yt_dlp;
@@ -276,12 +283,12 @@ QProcess* Downloader::create_generic_process() {
             emit this->standardErrorPushed(yt_dlp->readAllStandardError());
         });
 
-    QObject::connect(
-        yt_dlp, &QProcess::errorOccurred, this,
-        [this](QProcess::ProcessError err) {
-            std::cerr << "Process error occured, Code: " << err << '\n';
-            emit this->standardErrorPushed("Process error occured");
-        });
+    QObject::connect(yt_dlp, &QProcess::errorOccurred, this,
+                     [this](QProcess::ProcessError err) {
+                         emit this->standardErrorPushed(
+                             "[Downloader] yt-dlp error: " %
+                             QVariant::fromValue(err).toString() % '\n');
+                     });
 
     return yt_dlp;
 }
@@ -301,7 +308,7 @@ void Downloader::start_download() {
             if (exit_status != QProcess::ExitStatus::NormalExit ||
                 exit_code != 0)
                 emit standardErrorPushed(
-                    "[Downloader] Subprocess finished abnormally\n");
+                    "[Downloader] yt-dlp finished abruptly\n");
 
             set_is_downloading(false);
             start_download();

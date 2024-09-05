@@ -42,7 +42,7 @@ ColumnLayout {
         id: clearHistoryButton
 
         Layout.alignment: Qt.AlignCenter
-        color: Yd.Theme.secondary
+        color: Yd.Theme.clearHistoryBtn
         text: qsTr("Clear History")
 
         onClicked: clearHistory.open()
@@ -50,6 +50,20 @@ ColumnLayout {
         Yd.ClearHistoryDialog {
             id: clearHistory
 
+        }
+    }
+    Yd.RaisedButton {
+        id: licenseButton
+
+        Layout.alignment: Qt.AlignCenter
+        color: Yd.Theme.secondary
+
+        text: qsTr("Legal")
+
+        onClicked: licenseDialog.open()
+
+        Yd.LicenseDialog {
+            id: licenseDialog
         }
     }
     Item {

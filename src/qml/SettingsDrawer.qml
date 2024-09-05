@@ -17,6 +17,10 @@ Item {
     property int maxDrawerHeight: drawerHeight
     property int transitionDuration: 500
 
+    ToolTip.delay: Yd.Constants.toolTipDelay
+    ToolTip.text: qsTr("Settings")
+    ToolTip.visible: tab.hovered && !drawer.opened
+
     // Implicit dimensions are only the tab used to open the drawer
     implicitHeight: tab.implicitHeight
     implicitWidth: tab.implicitWidth

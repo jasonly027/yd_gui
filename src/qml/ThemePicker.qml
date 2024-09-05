@@ -7,7 +7,6 @@ import YdGui as Yd
 Item {
     id: root
 
-    // readonly property list<string> themes: ["darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple", "darkPurple", "lightPurple"]
     readonly property list<string> themes: Object.keys(Yd.Theme.themes)
     property alias columns: gridLayout.columns
 

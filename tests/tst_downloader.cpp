@@ -271,7 +271,7 @@ class DownloaderTest : public VideoFixture {
 };
 
 TEST_F(DownloaderTest, FetchInfoCks) {
-    dl_.fetch_info(kCksInfo.url());
+    dl_.fetchInfo(kCksInfo.url());
 
     EXPECT_TRUE(wait_for_n_signals(fetching_spy_, 2));
 
@@ -284,7 +284,7 @@ TEST_F(DownloaderTest, FetchInfoCks) {
 }
 
 TEST_F(DownloaderTest, FetchInfoJm) {
-    dl_.fetch_info(kJmInfo.url());
+    dl_.fetchInfo(kJmInfo.url());
 
     EXPECT_TRUE(wait_for_n_signals(fetching_spy_, 2));
 
@@ -302,7 +302,7 @@ TEST_F(DownloaderTest, FetchInfoJm) {
 }
 
 TEST_F(DownloaderTest, FetchInfoPlaylist) {
-    dl_.fetch_info(playlist_);
+    dl_.fetchInfo(playlist_);
 
     EXPECT_TRUE(wait_for_n_signals(fetching_spy_, 2));
 
@@ -339,7 +339,7 @@ TEST_F(DownloaderTest, EnqueueOneVideo) {
 
     EXPECT_EQ(state_spy.count(), 3) << PrintToString(extract_states(state_spy));
 
-    EXPECT_EQ(zoo_video_.progress(), 100.0);
+    EXPECT_EQ(zoo_video_.progress(), 1.0);
 
     EXPECT_THAT(
         extract_states(state_spy),

@@ -6,18 +6,23 @@ import YdGui as Yd
 Yd.TextTrailingIcon {
     id: root
 
-    color: mouseArea.containsMouse ? Qt.darker(Yd.Theme.secondary, 1.1) : Yd.Theme.secondary
+    ToolTip.delay: Yd.Constants.toolTipDelay
+    ToolTip.text: qsTr("Original link")
+    ToolTip.visible: mouseArea.containsMouse
+    color: mouseArea.containsMouse ? Qt.darker(Yd.Theme.link, 1.1) : Yd.Theme.link
+    elide: Text.ElideRight
     icon: "\ue06c"
     objectName: "linkText"
     spacing: 2
-    elide: Text.ElideRight
     trailingIcon.font.pixelSize: Yd.Constants.iconSizeSmall
 
     MouseArea {
         id: mouseArea
+
         anchors.fill: root
         cursorShape: Qt.PointingHandCursor
-        onClicked: Qt.openUrlExternally(root.text)
         hoverEnabled: true
+
+        onClicked: Qt.openUrlExternally(root.text)
     }
 }

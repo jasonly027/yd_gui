@@ -14,15 +14,6 @@ ApplicationWindow {
     visible: true
     width: 900
 
-    Connections {
-        target: _database
-
-        function onVideosPushed(videos) {
-            console.log("pushing db vids to model");
-            Yd.VideoListModel.appendVideos(videos);
-        }
-    }
-
     menuBar: Pane {
         id: menuBarPane
 
@@ -47,15 +38,12 @@ ApplicationWindow {
 
                 Layout.alignment: Qt.AlignCenter
                 Layout.fillWidth: true
-                Layout.leftMargin: 20
-                Layout.minimumWidth: implicitWidth
-                Layout.rightMargin: 20
+                Layout.maximumWidth: videosList.width
             }
             Item {
                 id: queueButtonsAndSettings
 
                 Layout.fillWidth: true
-                Layout.minimumWidth: implicitWidth
                 implicitHeight: queueButtons.implicitHeight
                 implicitWidth: Math.max(queueButtons.implicitWidth + settingsDrawer.implicitWidth, settingsDrawer.fullImplicitWidth)
 
@@ -68,8 +56,10 @@ ApplicationWindow {
                     Yd.RaisedButton {
                         id: downloadAll
 
-                        color: Yd.Theme.primary
+                        color: Yd.Theme.downloadAllBtn
                         text: qsTr("Download All")
+
+                        onClicked: Yd.VideoListModel.downloadAllVideos()
                     }
                     Yd.RaisedButton {
                         id: cancelAll
@@ -92,6 +82,13 @@ ApplicationWindow {
         }
     }
 
+    Connections {
+        function onInfoPushed(info) {
+            _database.addVideo(info);
+        }
+
+        target: Yd.Downloader
+    }
     Settings {
         property alias windowHeight: root.height
         property alias windowWidth: root.width
@@ -107,7 +104,6 @@ ApplicationWindow {
         handle: Rectangle {
             id: handleDelegate
 
-            color: "red"
             implicitHeight: 0
             implicitWidth: splitView.width
 

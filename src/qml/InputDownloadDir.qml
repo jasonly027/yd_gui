@@ -10,6 +10,9 @@ Item {
 
     property int pixelSize: Qt.application.font.pixelSize
 
+    ToolTip.delay: Yd.Constants.toolTipDelay
+    ToolTip.text: qsTr("Change download destination")
+    ToolTip.visible: mouseArea.containsMouse
     implicitHeight: rowLayout.implicitHeight
     implicitWidth: rowLayout.implicitWidth
     objectName: "inputDownloadDir"

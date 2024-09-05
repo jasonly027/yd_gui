@@ -6,8 +6,8 @@ import YdGui as Yd
 Item {
     id: root
 
-    required property var model
     required property int index
+    required property var model
 
     implicitHeight: columnLayout.implicitHeight
     implicitWidth: columnLayout.implicitWidth
@@ -53,7 +53,7 @@ Item {
                         asynchronous: true
                         source: root.model.info.thumbnail
                         sourceSize.height: rowLayout.implicitHeight
-                        visible: root.model.info.thumbnail !== ""
+                        visible: root.model.info.thumbnail !== "" && status === Image.Ready
 
                         Label {
                             id: secondsText
@@ -67,11 +67,13 @@ Item {
                                 const hrs = Math.floor(root.model.info.seconds / secsInAHour);
                                 const mins = Math.floor((root.model.info.seconds - (hrs * secsInAHour)) / secsInAMinute);
                                 const secs = root.model.info.seconds - (hrs * secsInAHour) - (mins * secsInAMinute);
-                                if (hrs !== 0)
-                                    return `${hrs}:${mins}:${secs}`;
-                                return `${mins}:${secs}`;
+                                const minsStr = String(mins).padStart(2, 0);
+                                const secsStr = String(secs).padStart(2, 0);
+                                if (hrs === 0)
+                                    return `${minsStr}:${secsStr}`;
+                                return `${hrs}:${minsStr}:${secsStr}`;
                             }
-                            visible: root.model.info.seconds > 0
+                            visible: root.model.info.seconds > 0 && thumbnailImage.status === Image.Ready
 
                             background: Rectangle {
                                 color: Yd.Theme.darkMode ? "black" : "white"
@@ -109,6 +111,7 @@ Item {
                                 Layout.fillWidth: true
                                 color: Yd.Theme.neutral
                                 elide: Text.ElideRight
+                                maximumLineCount: 1
                                 text: root.model.info.author !== "" ? root.model.info.author : "No Author"
                             }
                             Loader {
@@ -144,7 +147,8 @@ Item {
 
                                     formats: root.model.info.formats
                                     selectedFormat: root.model.selectedFormat
-                                    onProposeSelectedFormat: (formatId) => root.model.selectedFormat = formatId;
+
+                                    onProposeSelectedFormat: formatId => root.model.selectedFormat = formatId
                                 }
                             }
                             CheckBox {
@@ -156,6 +160,7 @@ Item {
                                 checked: root.model.downloadThumbnail
                                 palette.windowText: Yd.Theme.darkMode ? "white" : "black"
                                 text: qsTr("Download Thumbnail")
+
                                 // Binding loop occurs when onCheckChanged is used instead of onToggled
                                 onToggled: root.model.downloadThumbnail = checked
                             }
@@ -172,7 +177,7 @@ Item {
                         Yd.RemoveButton {
                             id: removeButton
 
-                            onClicked: Yd.VideoListModel.removeVideo(root.index)
+                            onClicked: Yd.VideoListModelSortedProxy.removeVideo(root.index)
 
                             anchors {
                                 right: removeAndDownloadItem.right

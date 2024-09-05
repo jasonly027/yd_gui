@@ -10,4 +10,5 @@ QtObject {
     readonly property int iconSizeLarge: Qt.application.font.pixelSize * 1.8
     readonly property int iconSizeMedium: Qt.application.font.pixelSize * 1.5
     readonly property int iconSizeSmall: Qt.application.font.pixelSize * 1.2
+    readonly property int toolTipDelay: 300
 }

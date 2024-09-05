@@ -1,6 +1,8 @@
 #include "application.h"
 
 #include <QtGui/qguiapplication.h>
+#include <qdebug.h>
+#include <qdir.h>
 #include <qfontdatabase.h>
 #include <qlogging.h>
 #include <qnamespace.h>
@@ -36,6 +38,16 @@ static void add_fonts() {
     }
 }
 
+static QString get_qt_license() {
+    QFile file(":/legal/Qt_License_LGPL3.txt");
+    if (!file.open(QIODevice::ReadOnly))
+        qWarning() << "Failed to load Qt License";
+
+    QTextStream in(&file);
+
+    return in.readAll();
+}
+
 Application::Application(int& argc, char** argv)
     : application_(create_application(argc, argv)),
       engine_(new QQmlApplicationEngine) {
@@ -46,6 +58,8 @@ Application::Application(int& argc, char** argv)
     engine_->rootContext()->setContextProperty("_settings",
                                                &ApplicationSettings::get());
     engine_->rootContext()->setContextProperty("_database", &Database::get());
+
+    engine_->rootContext()->setContextProperty("_qt_legal", get_qt_license());
 
     QObject::connect(
         engine_.get(), &QQmlApplicationEngine::objectCreationFailed,

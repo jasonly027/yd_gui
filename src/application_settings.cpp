@@ -32,7 +32,7 @@ QUrl ApplicationSettings::downloadDirValidated() {
 
     emit errorPushed(
         "[Downloader] Destination folder doesn't exist. Defaulting to either "
-        "the user's download folder or the application folder");
+        "the user's download folder or the application folder\n");
 
     return default_download_dir();
 }

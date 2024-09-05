@@ -19,6 +19,7 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     video.cpp video.h
     downloader.cpp downloader.h
     video_list_model.cpp video_list_model.h
+    video_list_model_sorted_proxy.cpp video_list_model_sorted_proxy.h
     database.cpp database.h
     application.cpp application.h
     application_settings.cpp application_settings.h
@@ -47,7 +48,7 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     qml/Console.qml
     qml/RemoveButton.qml
     qml/DownloadButton.qml
-    qml/TestDel.qml
+    qml/LicenseDialog.qml
 )
 
 qt_add_resources(${PROJECT_NAME}_lib "fonts"
@@ -63,6 +64,13 @@ qt_add_resources(${PROJECT_NAME}_lib "images"
     FILES
     images/darkPurple.svg
     images/lightPurple.svg
+    images/garden.svg
+)
+
+qt_add_resources(${PROJECT_NAME}_lib "legal"
+    PREFIX "/"
+    FILES
+    legal/Qt_License_LGPL3.txt
 )
 
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

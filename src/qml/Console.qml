@@ -16,7 +16,7 @@ Rectangle {
     objectName: "console"
 
     onNewMessage: msg => {
-        previewText.text = msg;
+        previewText.text = msg.replace(/\n$/, "");
         text.text += msg;
     }
 
@@ -53,10 +53,12 @@ Rectangle {
             Layout.leftMargin: 20
             Layout.rightMargin: 20
             Layout.topMargin: 10
+            spacing: 10
 
             Text {
                 id: documentIcon
 
+                ToolTip.delay: Yd.Constants.toolTipDelay
                 ToolTip.text: qsTr("Console Messages")
                 ToolTip.visible: documentIconHoverHandler.hovered
                 color: Yd.Theme.neutral
@@ -74,9 +76,11 @@ Rectangle {
             Text {
                 id: previewText
 
+                Layout.alignment: Qt.AlignTop
                 Layout.fillWidth: true
                 color: Yd.Theme.neutral
                 elide: Text.ElideRight
+                maximumLineCount: 1
             }
         }
         Rectangle {

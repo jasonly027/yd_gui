@@ -31,7 +31,7 @@ class Downloader : public QObject {
 
     static std::optional<VideoInfo> parseRawInfo(const QString& raw_info);
 
-    Q_INVOKABLE void fetch_info(const QString& url);
+    Q_INVOKABLE void fetchInfo(const QString& url);
 
    signals:
     void isFetchingChanged();

@@ -73,6 +73,8 @@ Item {
         Button {
             id: button
 
+            readonly property alias hoverHandler: hoverHandler
+
             onClicked: (ev) => root.clicked(ev)
 
             bottomPadding: 5

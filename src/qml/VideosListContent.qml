@@ -18,14 +18,28 @@ Rectangle {
 
         target: Yd.VideoListModel
     }
+    Connections {
+        function onVideosPushed(videos) {
+            Yd.VideoListModel.appendVideos(videos);
+        }
+
+        target: _database
+    }
     ListView {
         id: listView
+
+        property date __lastCheckedPos: new Date()
+        property real __position: visibleArea.yPosition / (1.0 - visibleArea.heightRatio)
 
         anchors.fill: parent
         boundsBehavior: Flickable.StopAtBounds
         clip: true
-        model: Yd.VideoListModel
+        model: Yd.VideoListModelSortedProxy
         spacing: Yd.Constants.boxPadding
+
+        Component.onCompleted: {
+            Yd.VideoListModelSortedProxy.setModel(Yd.VideoListModel);
+        }
 
         delegate: Yd.VideoDelegate {
             width: ListView.view.width
@@ -37,6 +51,14 @@ Rectangle {
         header: Item {
             enabled: false
             height: listView.spacing
+        }
+
+        on__PositionChanged: {
+            const now = new Date();
+            if (now - __lastCheckedPos > 3000 && __position > 0.99) {
+                __lastCheckedPos = now;
+                Yd.VideoListModel.paginate();
+            }
         }
 
         anchors {

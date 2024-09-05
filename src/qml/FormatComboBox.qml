@@ -10,8 +10,12 @@ Item {
     property int __widestFormatText: 0
     required property list<Yd.videoFormat> formats
     required property string selectedFormat
+
     signal proposeSelectedFormat(string format)
 
+    ToolTip.delay: Yd.Constants.toolTipDelay
+    ToolTip.text: qsTr("Select download format")
+    ToolTip.visible: comboBox.mouseArea.containsMouse
     implicitHeight: rowLayout.implicitHeight
     implicitWidth: __widestFormatText + icon.implicitWidth + rowLayout.spacing
     objectName: "formatComboBox"
@@ -31,7 +35,7 @@ Item {
                         return root.formats[i];
                     }
                 }
-                console.log("Format not found")
+                console.log("Format not found");
                 return null;
             }
 
@@ -81,6 +85,9 @@ Item {
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
             padding: 0
             width: mouseArea.width
+            background: Rectangle {
+                color: Yd.Theme.formatComboBoxBg
+            }
 
             Instantiator {
                 id: instantiator
