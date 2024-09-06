@@ -32,7 +32,13 @@ namespace yd_gui {
 using nlohmann::basic_json, nlohmann::json, std::nullopt, std::string,
     std::tuple, std::optional;
 
-Downloader::Downloader(QObject* parent) : QObject(parent) {}
+Downloader::Downloader(QObject* parent)
+    : QObject(parent),
+      is_fetching_(false),
+      is_downloading_(false),
+      program_exists_(false) {
+    check_program_exists();
+}
 
 static constexpr auto kProgram = "yt-dlp";
 

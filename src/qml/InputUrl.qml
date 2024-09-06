@@ -51,7 +51,7 @@ Item {
                 id: tabText
 
                 color: (input.hovered || labelMouseArea.containsMouse) ? Yd.Theme.primary : Yd.Theme.inputBarIcon
-                text:  qsTr("Link")
+                text: qsTr("Link")
                 visible: !Yd.Downloader.isFetching
 
                 font {
@@ -72,10 +72,16 @@ Item {
 
             Layout.fillHeight: true
             Layout.fillWidth: true
+            enabled: !Yd.Downloader.isFetching && Yd.Downloader.programExists && _database.valid
             hoverEnabled: true
-            enabled: !Yd.Downloader.isFetching && _database.valid
             inputMethodHints: Qt.ImhUrlCharactersOnly
-            placeholderText: _database.valid ? qsTr("Click to paste URL") : qsTr("History failed to load. Please restart.")
+            placeholderText: {
+                if (!Yd.Downloader.programExists)
+                    return qsTr("yt-dlp not found. Must be in the same folder as yd_gui or on the PATH.");
+                if (!_database.valid)
+                    return qsTr("History failed to load. Please restart.");
+                return qsTr("Click to paste URL");
+            }
 
             background: Rectangle {
                 bottomRightRadius: Yd.Constants.boxRadius
@@ -93,7 +99,6 @@ Item {
 
                 target: Yd.Downloader
             }
-
             MouseArea {
                 id: inputMouseArea
 

@@ -77,9 +77,9 @@ class Downloader : public QObject {
 
     bool check_program_exists();
 
-    bool is_fetching_ = false;
-    bool is_downloading_ = false;
-    bool program_exists_ = true;
+    bool is_fetching_;
+    bool is_downloading_;
+    bool program_exists_;
     QList<ManagedVideo*> queue_;
 };
 }  // namespace yd_gui

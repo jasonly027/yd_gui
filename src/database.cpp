@@ -2,10 +2,12 @@
 
 #include <qcoreapplication.h>
 #include <qdatetime.h>
+#include <qdir.h>
 #include <qobject.h>
 #include <qsqldatabase.h>
 #include <qsqlerror.h>
 #include <qsqlquery.h>
+#include <qstandardpaths.h>
 #include <qtypes.h>
 
 #include <QStringBuilder>
@@ -427,9 +429,16 @@ static bool create_database(const QString& file_name,
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connection_name);
     if (file_name == ":memory:")
         db.setDatabaseName(file_name);
-    else
-        db.setDatabaseName(QCoreApplication::applicationDirPath() % '/' %
-                           file_name);
+    else {
+        QString app_data_path = QStandardPaths::writableLocation(
+            QStandardPaths::AppLocalDataLocation);
+        if (!QDir(app_data_path).exists()) {
+            qDebug() << "[History] Writeable database path does not exist"
+                     << app_data_path;
+            return false;
+        }
+        db.setDatabaseName(app_data_path % "/" % file_name);
+    }
 
     if (!db.open()) {
         qDebug() << "[History] Failed to open history";
