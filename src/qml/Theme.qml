@@ -15,11 +15,8 @@ Item {
     readonly property color downloadBtnAdded: current.downloadBtnAdded
     readonly property color downloadBtnDone: current.downloadBtnDone
     readonly property color downloadBtnDownloading: current.downloadBtnDownloading
-    readonly property color dropDownBg: current.dropDownBg
     readonly property color error: current.error
     readonly property color formatComboBoxBg: current.formatComboBoxBg
-    readonly property color iconPrimary: current.iconPrimary
-    readonly property color iconSecondary: current.iconSecondary
     readonly property color inputBar: current.inputBar
     readonly property color inputBarIcon: current.inputBarIcon
     readonly property color inputBarTab: current.inputBarTab
@@ -39,11 +36,8 @@ Item {
             downloadBtnAdded: "#ffa3b0",
             downloadBtnDownloading: "#d0b1ff",
             downloadBtnDone: "#B994EC",
-            dropDownBg: "#383a40",
             error: "#cc4125",
             formatComboBoxBg: "#383a40",
-            iconPrimary: "#ffffff",
-            iconSecondary: "#919193",
             inputBar: "#999999",
             inputBarIcon: "#999999",
             inputBarTab: "#232428",
@@ -65,11 +59,8 @@ Item {
             downloadBtnAdded: "#ffa3b0",
             downloadBtnDownloading: "#d0b1ff",
             downloadBtnDone: "#B994EC",
-            dropDownBg: "#d9d9d9",
             error: "#cc4125",
             formatComboBoxBg: "#d9d9d9",
-            iconPrimary: "#404040",
-            iconSecondary: "#6d6d6d",
             inputBar: "#eeeeee",
             inputBarIcon: "#2b2d31",
             inputBarTab: "#ffffff",
@@ -91,11 +82,8 @@ Item {
             downloadBtnAdded: "#C0D16D",
             downloadBtnDownloading: "#E39B52",
             downloadBtnDone: "#FF6542",
-            dropDownBg: "#38082B",
             error: "#B10000",
             formatComboBoxBg: "#38082B",
-            iconPrimary: "#ffffff",
-            iconSecondary: "#919193",
             inputBar: "#9FB17B",
             inputBarIcon: "#9FB17B",
             inputBarTab: "#444A30",
@@ -126,11 +114,8 @@ Item {
             required property color downloadBtnAdded
             required property color downloadBtnDone
             required property color downloadBtnDownloading
-            required property color dropDownBg
             required property color error
             required property color formatComboBoxBg
-            required property color iconPrimary
-            required property color iconSecondary
             required property color inputBar
             required property color inputBarIcon
             required property color inputBarTab

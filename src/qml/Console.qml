@@ -89,8 +89,8 @@ Rectangle {
             Layout.fillWidth: true
             Layout.leftMargin: 20
             Layout.rightMargin: 20
-            color: Qt.darker(Yd.Theme.consoleBg, 1.2)
-            implicitHeight: 3
+            color: Yd.Theme.neutral
+            implicitHeight: 2
             radius: Yd.Constants.boxRadius
         }
         ScrollView {
