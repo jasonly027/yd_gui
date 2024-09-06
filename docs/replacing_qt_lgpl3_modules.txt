@@ -1,0 +1,5 @@
+These are instructions for how to replace our Qt LGPL3 modules with your own
+
+1. Navigate to the program installation directory
+2. Replace Qt DLLS with your own
+3. Complete

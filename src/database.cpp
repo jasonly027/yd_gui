@@ -12,7 +12,6 @@
 
 #include <QStringBuilder>
 #include <algorithm>
-#include <iostream>
 #include <optional>
 
 #include "video.h"

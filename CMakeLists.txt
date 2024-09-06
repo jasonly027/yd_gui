@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 
 project(yd_gui
-    VERSION 0.1.0
+    VERSION 1.0.0
     LANGUAGES CXX
 )
 
@@ -18,7 +18,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 include(SetupDependencies)
 
 # Create executable
-qt_add_executable(${PROJECT_NAME} src/main.cpp)
+qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE src/main.cpp)
 qt_add_qml_module(${PROJECT_NAME}
     URI ${PROJECT_NAME}
     QML_FILES
@@ -32,10 +32,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${PROJECT_NAME}_libplugin
 )
 
-if(APPLE)
-    set_target_properties(${PROJECT_NAME} PROPERTIES MACOSX_BUNDLE TRUE)
-endif()
-
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4)
 else()
@@ -47,3 +43,6 @@ if(ENABLE_TESTING)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# Install
+include(SetupInstall)
