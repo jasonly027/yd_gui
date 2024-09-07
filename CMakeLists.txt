@@ -18,7 +18,19 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 include(SetupDependencies)
 
 # Create executable
-qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE src/main.cpp)
+set(MACOSX_BUNDLE_ICON_FILE appico.icns)
+set(appico_macos ${PROJECT_SOURCE_DIR}/assets/appico.icns)
+set_source_files_properties(${appico_macos}
+    PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+
+qt_add_executable(${PROJECT_NAME} WIN32 MACOSX_BUNDLE
+    src/main.cpp
+    ${PROJECT_SOURCE_DIR}/assets/appico.rc
+    ${appico_macos}
+)
+
 qt_add_qml_module(${PROJECT_NAME}
     URI ${PROJECT_NAME}
     QML_FILES

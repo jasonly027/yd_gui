@@ -1,9 +1,9 @@
 <h1 align="center">yd_gui 📹</h1>
 
-<h4 align="center">A QtQuick GUI wrapper for <a href="https://github.com/yt-dlp/yt-dlp" alt="yt-dlp GitHub">yt-dlp</a> for downloading YouTube videos</h4>
+<h4 align="center">A QtQuick cross-platform GUI wrapper for <a href="https://github.com/yt-dlp/yt-dlp" alt="yt-dlp GitHub">yt-dlp</a> for downloading YouTube videos</h4>
 
 <p align="center">
-<a href="" alt="GitHub Releases">
+<a href="#installation" alt="GitHub Releases">
     <img alt="GitHub Release" src="https://img.shields.io/github/v/release/jasonly027/yd_gui?style=for-the-badge&label=Download">
 </a>
 <a href="https://github.com/jasonly027/yd_gui/actions/workflows/tests.yml" alt="GitHub Actions Tests">
@@ -70,4 +70,4 @@ cmake --install build
 <h2 id="contributors">👥 Contributors</h2>
 
 - [Jason Ly](https://github.com/jasonly027)
-- UI design by [Priscilla Ho]()
+- UI design by [Priscilla Ho](https://www.artstation.com/priscillaho)
