@@ -80,4 +80,4 @@ jobs:
             - name: Test
               working-directory: ${{ steps.strings.outputs.build-output-dir }}
               # Excluded tests require yt-dlp sign-in to prevent botting
-              run: ctest --build-config ${{ matrix.build_type }} --output-on-failure -E "(FetchInfoJm|FetchInfoPlaylist|EnqueueOneVideo|EnqueueTwoVideos|)"
+              run: ctest --build-config ${{ matrix.build_type }} --output-on-failure -E "(FetchInfoJm|FetchInfoPlaylist|EnqueueOneVideo|EnqueueTwoVideos)"

@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <qsignalspy.h>
+#include <qtpreprocessorsupport.h>
 #include <qtypes.h>
 #include <qvariant.h>
 #include <video.h>
@@ -58,6 +59,7 @@ T try_convert(QVariant var) {
 MATCHER_P2(IsBetween, min, max,
            (std::string(negation ? "Isn't" : "Is") + " between " +
             PrintToString(min) + " and " + PrintToString(max))) {
+    Q_UNUSED(result_listener);
     return min <= arg && arg <= max;
 }
 
