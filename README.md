@@ -27,6 +27,7 @@
 <h2 id="preview">🎴 Preview</h2>
 
 <h2 id="installation">⬇️ Installation</h2>
+
 **yd_gui requires yt-dlp to work.** Install yt-dlp [here](https://github.com/yt-dlp/yt-dlp) and ensure its on the PATH.
 
 ### Pre-built installer (Recommended)
