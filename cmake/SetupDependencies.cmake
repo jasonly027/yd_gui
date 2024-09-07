@@ -1,14 +1,17 @@
 include(FetchContent)
 include(CPM)
 
-CPMAddPackage(
-    NAME googletest
-    GITHUB_REPOSITORY google/googletest
-    VERSION 1.14.0
-    OPTIONS
-    "INSTALL_GTEST OFF"
-    "gtest_force_shared_crt ON CACHE BOOL \"\" FORCE"
-)
+if(ENABLE_TESTING)
+    CPMAddPackage(
+        NAME googletest
+        GITHUB_REPOSITORY google/googletest
+        VERSION 1.14.0
+        OPTIONS
+        "INSTALL_GTEST OFF"
+        "gtest_force_shared_crt ON CACHE BOOL \"\" FORCE"
+    )
+endif()
+
 CPMAddPackage(
     NAME nlohmann_json
     GITHUB_REPOSITORY nlohmann/json
