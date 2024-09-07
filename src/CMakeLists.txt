@@ -65,6 +65,7 @@ qt_add_resources(${PROJECT_NAME}_lib "images"
     images/darkPurple.svg
     images/lightPurple.svg
     images/garden.svg
+    images/sea.svg
 )
 
 qt_add_resources(${PROJECT_NAME}_lib "legal"

@@ -94,6 +94,29 @@ Item {
             settingsBg: "#4A0C00",
             videoCardBg: "#281103",
             videosListBg: "#442500"
+        }),
+        "sea": themeObj.createObject(null, {
+            bg: "#3D4976",
+            cancelBtn: "#A3B4E2",
+            clearHistoryBtn: "#A3B4E2",
+            consoleBg: "#29345B",
+            darkMode: true,
+            downloadAllBtn: "#58C0F8",
+            downloadBtnAdded: "#58C0F8",
+            downloadBtnDownloading: "#74A6F1",
+            downloadBtnDone: "#518EEB",
+            error: "#B10000",
+            formatComboBoxBg: "#354D73",
+            inputBar: "#90B4DD",
+            inputBarIcon: "#90B4DD",
+            inputBarTab: "#29345B",
+            link: "#76F1FF",
+            neutral: "#8EB2DC",
+            primary: "#58C0F8",
+            secondary: "#63B8D0",
+            settingsBg: "#29345B",
+            videoCardBg: "#496F9A",
+            videosListBg: "#3C5480"
         })
     }
     readonly property color videoCardBg: current.videoCardBg
