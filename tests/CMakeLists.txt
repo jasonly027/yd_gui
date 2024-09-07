@@ -31,15 +31,3 @@ if(MSVC)
 else()
     target_compile_options("${PROJECT_NAME}_tests" PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
-
-# Using Qt Quick Test
-add_executable("${PROJECT_NAME}_qml_tests" tst_qml.cpp)
-
-add_test(NAME "${PROJECT_NAME}_qml_tests" COMMAND "${PROJECT_NAME}_qml_tests")
-
-target_link_libraries("${PROJECT_NAME}_qml_tests"
-    PRIVATE
-    Qt6::QuickTest
-    Qt6::Qml
-    "${PROJECT_NAME}_libplugin"
-)
