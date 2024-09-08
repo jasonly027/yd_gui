@@ -18,6 +18,12 @@ ColumnLayout {
         Layout.alignment: Qt.AlignCenter
         Layout.preferredWidth: themePicker.width
     }
+    Yd.InputYtdlp {
+        id: inputYtdlp
+
+        Layout.alignment: Qt.AlignCenter
+        Layout.preferredWidth: themePicker.width
+    }
     Yd.Header {
         id: themesHeader
 
@@ -34,9 +40,10 @@ ColumnLayout {
 
         Layout.alignment: Qt.AlignCenter
         checked: _settings.downloadThumbnail
-        onCheckedChanged: _settings.downloadThumbnail = checked
         palette.windowText: Yd.Theme.neutral
         text: qsTr("Download thumbnail by default")
+
+        onCheckedChanged: _settings.downloadThumbnail = checked
     }
     Yd.RaisedButton {
         id: clearHistoryButton
@@ -57,13 +64,13 @@ ColumnLayout {
 
         Layout.alignment: Qt.AlignCenter
         color: Yd.Theme.secondary
-
         text: qsTr("Legal")
 
         onClicked: licenseDialog.open()
 
         Yd.LicenseDialog {
             id: licenseDialog
+
         }
     }
     Item {

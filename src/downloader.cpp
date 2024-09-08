@@ -37,10 +37,8 @@ Downloader::Downloader(QObject* parent)
       is_fetching_(false),
       is_downloading_(false),
       program_exists_(false) {
-    check_program_exists();
+    checkProgram();
 }
-
-static constexpr auto kProgram = "yt-dlp";
 
 template <typename T>
 static T from_field(const char field[], const json& json,
@@ -140,7 +138,7 @@ optional<VideoInfo> Downloader::parseRawInfo(const QString& raw_info) {
    unusable.
  */
 void Downloader::fetchInfo(const QString& url) {
-    if (is_fetching_ || !check_program_exists()) return;
+    if (is_fetching_ || !checkProgram()) return;
     set_is_fetching(true);
 
     QProcess* yt_dlp = create_fetch_process(url);
@@ -277,7 +275,7 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
 QProcess* Downloader::create_generic_process() {
     auto* yt_dlp = new QProcess();
 
-    yt_dlp->setProgram(kProgram);
+    yt_dlp->setProgram(ApplicationSettings::get().ytdlpStr());
     yt_dlp->setWorkingDirectory(
         ApplicationSettings::get().downloadDirValidated().toLocalFile());
 
@@ -300,7 +298,7 @@ QProcess* Downloader::create_generic_process() {
 }
 
 void Downloader::start_download() {
-    if (queue_.empty() || !check_program_exists()) return;
+    if (queue_.empty() || !checkProgram()) return;
     set_is_downloading(true);
 
     ManagedVideo* const video = queue_.takeFirst();
@@ -347,8 +345,8 @@ void Downloader::set_program_exists(bool program_exists) {
     emit programExistsChanged();
 }
 
-bool Downloader::check_program_exists() {
-    const bool found = QStandardPaths::findExecutable(kProgram) != "";
+bool Downloader::checkProgram() {
+    const bool found = QStandardPaths::findExecutable(ApplicationSettings::get().ytdlpStr()) != "";
     set_program_exists(found);
     return found;
 }

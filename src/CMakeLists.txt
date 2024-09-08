@@ -49,6 +49,7 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     qml/RemoveButton.qml
     qml/DownloadButton.qml
     qml/LicenseDialog.qml
+    qml/InputYtdlp.qml
 )
 
 qt_add_resources(${PROJECT_NAME}_lib "fonts"

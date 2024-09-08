@@ -79,7 +79,7 @@ Item {
             inputMethodHints: Qt.ImhUrlCharactersOnly
             placeholderText: {
                 if (!Yd.Downloader.programExists)
-                    return qsTr("yt-dlp not found. Download and ensure its on the PATH.");
+                    return qsTr("yt-dlp not found. Verify path in app settings is correct.");
                 if (!_database.valid)
                     return qsTr("History failed to load. Please restart.");
                 return qsTr("Click to paste URL");

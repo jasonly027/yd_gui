@@ -4,6 +4,7 @@
 #include <qdir.h>
 #include <qsettings.h>
 #include <qstandardpaths.h>
+#include <qstringliteral.h>
 #include <qurl.h>
 #include <qvariant.h>
 
@@ -87,6 +88,25 @@ void ApplicationSettings::setDownloadThumbnail(bool val) {
     setValue("downloadThumbnail", val);
     emit downloadThumbnailChanged();
 }
+
+static QUrl default_ytdlp() {
+    return QUrl::fromLocalFile(QStringLiteral("yt-dlp"));
+}
+
+QUrl ApplicationSettings::ytdlp() const {
+    return contains("ytdlp") ? value("ytdlp").toUrl() : default_ytdlp();
+}
+
+void ApplicationSettings::setYtdlp(const QUrl& ytdlp) {
+    const QUrl current_ytdlp = value("ytdlp", default_ytdlp()).toUrl();
+
+    if (ytdlp == current_ytdlp) return;
+
+    setValue("ytdlp", ytdlp);
+    emit ytdlpChanged();
+}
+
+QString ApplicationSettings::ytdlpStr() const { return ytdlp().toLocalFile(); }
 
 ApplicationSettings::ApplicationSettings(QObject* parent) : QSettings(parent) {}
 

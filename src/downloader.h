@@ -33,6 +33,8 @@ class Downloader : public QObject {
 
     Q_INVOKABLE void fetchInfo(const QString& url);
 
+    Q_INVOKABLE bool checkProgram();
+
    signals:
     void isFetchingChanged();
 
@@ -74,8 +76,6 @@ class Downloader : public QObject {
     void set_is_downloading(bool is_downloading);
 
     void set_program_exists(bool program_exists);
-
-    bool check_program_exists();
 
     bool is_fetching_;
     bool is_downloading_;
