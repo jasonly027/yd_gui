@@ -78,7 +78,7 @@ qt_add_resources(${PROJECT_NAME}_lib "legal"
 
 target_include_directories(${PROJECT_NAME}_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(${PROJECT_NAME}_lib PRIVATE nlohmann_json::nlohmann_json Qt6::Gui Qt6::Sql)
+target_link_libraries(${PROJECT_NAME}_lib PRIVATE nlohmann_json::nlohmann_json Qt6::Gui Qt6::Sql Qt6::Svg)
 
 target_compile_definitions(${PROJECT_NAME}_lib
     PRIVATE
