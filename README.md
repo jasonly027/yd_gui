@@ -28,7 +28,7 @@
 
 <div align="center">
     <img src=".github/assets/multitheme.png" alt="yd_gui Themes">
-    <video src=".github/assets/demo.mp4">
+    https://github.com/user-attachments/assets/f5684601-ac28-4ae9-94a9-486a3d642342
 </div>
 
 <h2 id="installation">⬇️ Installation</h2>
