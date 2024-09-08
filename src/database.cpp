@@ -431,11 +431,7 @@ static bool create_database(const QString& file_name,
     else {
         QString app_data_path = QStandardPaths::writableLocation(
             QStandardPaths::AppLocalDataLocation);
-        if (!QDir(app_data_path).exists()) {
-            qDebug() << "[History] Writeable database path does not exist"
-                     << app_data_path;
-            return false;
-        }
+        QDir().mkpath(app_data_path);
         db.setDatabaseName(app_data_path % "/" % file_name);
     }
 

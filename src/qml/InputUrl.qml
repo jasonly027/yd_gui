@@ -72,6 +72,8 @@ Item {
 
             Layout.fillHeight: true
             Layout.fillWidth: true
+            color: Qt.darker(Yd.Theme.inputBar)
+            placeholderTextColor: color
             enabled: !Yd.Downloader.isFetching && Yd.Downloader.programExists && _database.valid
             hoverEnabled: true
             inputMethodHints: Qt.ImhUrlCharactersOnly
