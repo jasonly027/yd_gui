@@ -26,10 +26,9 @@
 
 <h2 id="preview">🎴 Preview</h2>
 
-<div align="center">
-    <img src=".github/assets/multitheme.png" alt="yd_gui Themes">
-    https://github.com/user-attachments/assets/f5684601-ac28-4ae9-94a9-486a3d642342
-</div>
+<img align="center" src=".github/assets/multitheme.png" alt="yd_gui Themes">
+
+https://github.com/user-attachments/assets/f5684601-ac28-4ae9-94a9-486a3d642342
 
 <h2 id="installation">⬇️ Installation</h2>
 
