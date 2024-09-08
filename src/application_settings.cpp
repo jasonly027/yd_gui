@@ -108,6 +108,29 @@ void ApplicationSettings::setYtdlp(const QUrl& ytdlp) {
 
 QString ApplicationSettings::ytdlpStr() const { return ytdlp().toLocalFile(); }
 
+static QUrl default_ffmpeg_dir() {
+    return QUrl::fromLocalFile(QStringLiteral(""));
+}
+
+QUrl ApplicationSettings::ffmpegDir() const {
+    return contains("ffmpegDir") ? value("ffmpegDir").toUrl()
+                                 : default_ffmpeg_dir();
+}
+
+void ApplicationSettings::setFfmpegDir(const QUrl& ffmpegDir) {
+    const QUrl current_ffmpeg_dir =
+        value("ffmpegDir", default_ffmpeg_dir()).toUrl();
+
+    if (ffmpegDir == current_ffmpeg_dir) return;
+
+    setValue("ffmpegDir", ffmpegDir);
+    emit ffmpegDirChanged();
+}
+
+QString ApplicationSettings::ffmpegDirStr() const {
+    return ffmpegDir().toLocalFile();
+}
+
 ApplicationSettings::ApplicationSettings(QObject* parent) : QSettings(parent) {}
 
 }  // namespace yd_gui

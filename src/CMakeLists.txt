@@ -50,6 +50,7 @@ qt_add_qml_module(${PROJECT_NAME}_lib
     qml/DownloadButton.qml
     qml/LicenseDialog.qml
     qml/InputYtdlp.qml
+    qml/InputFfmpeg.qml
 )
 
 qt_add_resources(${PROJECT_NAME}_lib "fonts"

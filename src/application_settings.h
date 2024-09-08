@@ -19,6 +19,8 @@ class ApplicationSettings : public QSettings {
                    setDownloadThumbnail NOTIFY downloadThumbnailChanged)
     Q_PROPERTY(QUrl ytdlp READ ytdlp WRITE setYtdlp NOTIFY ytdlpChanged)
     Q_PROPERTY(QString ytdlpStr READ ytdlpStr NOTIFY ytdlpChanged)
+    Q_PROPERTY(QUrl ffmpegDir READ ffmpegDir WRITE setFfmpegDir NOTIFY ffmpegDirChanged)
+    Q_PROPERTY(QString ffmpegDirStr READ ffmpegDirStr NOTIFY ffmpegDirChanged)
 
    public:
     static ApplicationSettings& get();
@@ -31,6 +33,8 @@ class ApplicationSettings : public QSettings {
     bool downloadThumbnail() const;
     QUrl ytdlp() const;
     QString ytdlpStr() const;
+    QUrl ffmpegDir() const;
+    QString ffmpegDirStr() const;
 
    signals:
     void downloadDirChanged();
@@ -38,12 +42,14 @@ class ApplicationSettings : public QSettings {
     void errorPushed(QString error);
     void downloadThumbnailChanged();
     void ytdlpChanged();
+    void ffmpegDirChanged();
 
    public slots:
     void setDownloadDir(const QUrl& dir);
     void setTheme(const QString& theme);
     void setDownloadThumbnail(bool);
     void setYtdlp(const QUrl& ytdlp);
+    void setFfmpegDir(const QUrl& ffmpegDir);
 
    private:
     explicit ApplicationSettings(QObject* parent = nullptr);

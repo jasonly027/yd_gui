@@ -73,7 +73,6 @@ Item {
             Layout.fillHeight: true
             Layout.fillWidth: true
             color: Qt.darker(Yd.Theme.inputBar)
-            placeholderTextColor: color
             enabled: !Yd.Downloader.isFetching && Yd.Downloader.programExists && _database.valid
             hoverEnabled: true
             inputMethodHints: Qt.ImhUrlCharactersOnly
@@ -84,6 +83,7 @@ Item {
                     return qsTr("History failed to load. Please restart.");
                 return qsTr("Click to paste URL");
             }
+            placeholderTextColor: color
 
             background: Rectangle {
                 bottomRightRadius: Yd.Constants.boxRadius
@@ -92,6 +92,7 @@ Item {
             }
 
             onAccepted: Yd.Downloader.fetchInfo(text)
+            onPlaceholderTextChanged: input.clear()
 
             Connections {
                 function onIsFetchingChanged() {

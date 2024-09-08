@@ -24,6 +24,12 @@ ColumnLayout {
         Layout.alignment: Qt.AlignCenter
         Layout.preferredWidth: themePicker.width
     }
+    Yd.InputFfmpeg {
+        id: inputFfmpeg
+
+        Layout.alignment: Qt.AlignCenter
+        Layout.preferredWidth: themePicker.width
+    }
     Yd.Header {
         id: themesHeader
 

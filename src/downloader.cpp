@@ -228,6 +228,8 @@ QProcess* Downloader::create_download_process(ManagedVideo& video) {
                            "--progress-template",
                            "%(progress._percent_str)s",
                            "--newline",
+                           "--ffmpeg-location",
+                           ApplicationSettings::get().ffmpegDirStr(),
                            "-f",
                            std::move(format_arg),
                            video.info().url()};
@@ -346,7 +348,8 @@ void Downloader::set_program_exists(bool program_exists) {
 }
 
 bool Downloader::checkProgram() {
-    const bool found = QStandardPaths::findExecutable(ApplicationSettings::get().ytdlpStr()) != "";
+    const bool found = QStandardPaths::findExecutable(
+                           ApplicationSettings::get().ytdlpStr()) != "";
     set_program_exists(found);
     return found;
 }
