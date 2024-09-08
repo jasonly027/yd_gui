@@ -26,9 +26,15 @@
 
 <h2 id="preview">🎴 Preview</h2>
 
+<div align="center">
+    <img src=".github/assets/multitheme.png" alt="yd_gui Themes">
+    <video src=".github/assets/demo.mp4">
+</div>
+
 <h2 id="installation">⬇️ Installation</h2>
 
-**yd_gui requires yt-dlp to work.** Install yt-dlp [here](https://github.com/yt-dlp/yt-dlp) and ensure its on the PATH.
+**yd_gui requires yt-dlp and FFmpeg to work.** Install yt-dlp [here](https://github.com/yt-dlp/yt-dlp). Install FFmpeg [here](https://ffmpeg.org).
+Specify their locations in yd_gui's settings.
 
 ### Pre-built installer (Recommended)
 1. Download the installer from the [releases](https://github.com/jasonly027/yd_gui/releases) page.
@@ -61,6 +67,7 @@ cmake --install build
 
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - [Qt Framework](https://www.qt.io/product/framework)
+    - [Source code](https://download.qt.io/archive/qt/6.7/6.7.2/single/)
 - [Google Test](https://github.com/google/googletest)
 - [nlohmann_json](https://github.com/nlohmann/json)
 - [SQLite](https://sqlite.org/)
